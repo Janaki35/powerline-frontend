@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../config/app_config.dart';
 import '../config/app_theme.dart';
 import '../models/inspection_model.dart';
 import '../services/image_service.dart';
@@ -37,7 +38,7 @@ class _TowerStructurePanelState extends State<TowerStructurePanel> {
   Widget build(BuildContext context) {
     final hasSelectedCircuit = widget.selectedCircuit != null;
 
-    const imagePath = 'DJI_20260328161505_0088_S_seg01_frame_01180.jpg';
+    const imagePath = AppConfig.baseTowerImageAsset;
 
     return Container(
       width: widget.width ?? 410,

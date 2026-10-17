@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart' hide Path;
+import '../config/app_config.dart';
 import '../config/app_theme.dart';
 import '../models/inspection_model.dart';
 import '../services/image_service.dart';
@@ -2797,7 +2798,7 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
                           child: Transform.scale(
                             scale: 1.45,
                             child: ImageService.buildImage(
-                              imagePath: 'DJI_20260328161505_0088_S_seg01_frame_01180.jpg',
+                              imagePath: AppConfig.baseTowerImageAsset,
                               fit: BoxFit.cover,
                             ),
                           ),

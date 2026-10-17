@@ -74,6 +74,20 @@ class ImageService {
 
   /// Returns appropriate ImageProvider for Web vs Windows Desktop
   static ImageProvider getImageProvider(String rawPath) {
+    final clean = cleanPath(rawPath);
+
+    // 1. Check for explicit asset paths
+    if (rawPath.startsWith('assets/') || clean.startsWith('assets/')) {
+      return AssetImage(rawPath.startsWith('assets/') ? rawPath : clean);
+    }
+
+    // 2. Check for bundled base tower overview image for deployment reliability
+    if (clean.endsWith(AppConfig.baseTowerImageFilename) ||
+        clean.contains('DJI_20260328161505_0088_S_seg01_frame_01180.jpg')) {
+      return const AssetImage(AppConfig.baseTowerImageAsset);
+    }
+
+    // 3. Fallback to platform-specific provider (local file on desktop, HTTP on web)
     final httpUrl = getHttpUrl(rawPath);
     return getPlatformImageProvider(rawPath, httpUrl, AppConfig.rawDataLocalPath);
   }

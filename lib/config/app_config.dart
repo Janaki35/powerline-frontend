@@ -20,6 +20,12 @@ class AppConfig {
   static const String defaultTowerId = '400KV_Tower_1_Site_B';
   static const String defaultTowerCode = 'T01-400KV-SB';
 
+  /// Asset path for base tower structure image (bundled for reliable deployment)
+  static const String baseTowerImageAsset =
+      'assets/images/DJI_20260328161505_0088_S_seg01_frame_01180.jpg';
+  static const String baseTowerImageFilename =
+      'DJI_20260328161505_0088_S_seg01_frame_01180.jpg';
+
   /// Check whether we are running on web
   static bool get isWeb => kIsWeb;
 }
