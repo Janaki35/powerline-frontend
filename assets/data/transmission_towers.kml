@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+<Document>
+  <name>Transmission Line Corridor - Tower Survey</name>
+  <description>GPS survey points for 135KV, 220KV, and 400KV transmission towers</description>
+
+  <Style id="kv135">
+    <IconStyle><color>ff00ffff</color><scale>1.1</scale><Icon><href>http://maps.google.com/mapfiles/kml/paddle/ylw-circle.png</href></Icon></IconStyle>
+  </Style>
+  <Style id="kv220">
+    <IconStyle><color>ff00a5ff</color><scale>1.1</scale><Icon><href>http://maps.google.com/mapfiles/kml/paddle/orange-circle.png</href></Icon></IconStyle>
+  </Style>
+  <Style id="kv400">
+    <IconStyle><color>ff0000ff</color><scale>1.1</scale><Icon><href>http://maps.google.com/mapfiles/kml/paddle/red-circle.png</href></Icon></IconStyle>
+  </Style>
+
+  <Folder>
+    <name>135KV Line</name>
+    <Placemark>
+      <name>135KV Tower 1</name>
+      <description>Altitude: 66.332 m</description>
+      <styleUrl>#kv135</styleUrl>
+      <Point><coordinates>85.263880,20.826015,66.332</coordinates></Point>
+    </Placemark>
+    <Placemark>
+      <name>135KV Tower 2</name>
+      <description>Altitude: 79.012 m | 330m from Tower 1</description>
+      <styleUrl>#kv135</styleUrl>
+      <Point><coordinates>85.265309,20.823362,79.012</coordinates></Point>
+    </Placemark>
+    <Placemark>
+      <name>135KV Line Segment</name>
+      <styleUrl>#kv135</styleUrl>
+      <LineString>
+        <tessellate>1</tessellate>
+        <coordinates>
+          85.263880,20.826015,66.332
+          85.265309,20.823362,79.012
+        </coordinates>
+      </LineString>
+    </Placemark>
+  </Folder>
+
+  <Folder>
+    <name>220KV Line - Site A</name>
+    <Placemark>
+      <name>220KV Tower 1 (Site A)</name>
+      <description>Altitude: 42.254 m</description>
+      <styleUrl>#kv220</styleUrl>
+      <Point><coordinates>85.208481,20.804765,42.254</coordinates></Point>
+    </Placemark>
+    <Placemark>
+      <name>220KV Tower 2 (Site A)</name>
+      <description>Altitude: 53.802 m | 363m from Tower 1</description>
+      <styleUrl>#kv220</styleUrl>
+      <Point><coordinates>85.208490,20.801503,53.802</coordinates></Point>
+    </Placemark>
+    <Placemark>
+      <name>220KV Site A Segment</name>
+      <styleUrl>#kv220</styleUrl>
+      <LineString>
+        <tessellate>1</tessellate>
+        <coordinates>
+          85.208481,20.804765,42.254
+          85.208490,20.801503,53.802
+        </coordinates>
+      </LineString>
+    </Placemark>
+  </Folder>
+
+  <Folder>
+    <name>220KV Line - Site B</name>
+    <Placemark>
+      <name>220KV Tower 1 (Site B)</name>
+      <description>Altitude: 27.787 m</description>
+      <styleUrl>#kv220</styleUrl>
+      <Point><coordinates>85.258301,20.835819,27.787</coordinates></Point>
+    </Placemark>
+    <Placemark>
+      <name>220KV Tower 2 (Site B)</name>
+      <description>Altitude: 50.102 m | 400m from Tower 1</description>
+      <styleUrl>#kv220</styleUrl>
+      <Point><coordinates>85.255370,20.833486,50.102</coordinates></Point>
+    </Placemark>
+    <Placemark>
+      <name>220KV Site B Segment</name>
+      <styleUrl>#kv220</styleUrl>
+      <LineString>
+        <tessellate>1</tessellate>
+        <coordinates>
+          85.258301,20.835819,27.787
+          85.255370,20.833486,50.102
+        </coordinates>
+      </LineString>
+    </Placemark>
+  </Folder>
+
+  <Folder>
+    <name>400KV Line - Site A</name>
+    <Placemark>
+      <name>400KV Tower 1 (Site A)</name>
+      <description>Altitude: 87.607 m</description>
+      <styleUrl>#kv400</styleUrl>
+      <Point><coordinates>85.267662,20.824616,87.607</coordinates></Point>
+    </Placemark>
+    <Placemark>
+      <name>400KV Tower 2 (Site A)</name>
+      <description>Altitude: 64.243 m | 284m from Tower 1, 23m elevation drop</description>
+      <styleUrl>#kv400</styleUrl>
+      <Point><coordinates>85.268523,20.822193,64.243</coordinates></Point>
+    </Placemark>
+    <Placemark>
+      <name>400KV Site A Segment</name>
+      <styleUrl>#kv400</styleUrl>
+      <LineString>
+        <tessellate>1</tessellate>
+        <coordinates>
+          85.267662,20.824616,87.607
+          85.268523,20.822193,64.243
+        </coordinates>
+      </LineString>
+    </Placemark>
+  </Folder>
+
+  <Folder>
+    <name>400KV Line - Site B</name>
+    <Placemark>
+      <name>400KV Tower 1 (Site B)</name>
+      <description>Altitude: 43.881 m</description>
+      <styleUrl>#kv400</styleUrl>
+      <Point><coordinates>85.284934,20.805013,43.881</coordinates></Point>
+    </Placemark>
+    <Placemark>
+      <name>400KV Tower 2 (Site B)</name>
+      <description>Altitude: 49.841 m | 442m from Tower 1</description>
+      <styleUrl>#kv400</styleUrl>
+      <Point><coordinates>85.288363,20.802656,49.841</coordinates></Point>
+    </Placemark>
+    <Placemark>
+      <name>400KV Site B Segment</name>
+      <styleUrl>#kv400</styleUrl>
+      <LineString>
+        <tessellate>1</tessellate>
+        <coordinates>
+          85.284934,20.805013,43.881
+          85.288363,20.802656,49.841
+        </coordinates>
+      </LineString>
+    </Placemark>
+  </Folder>
+
+</Document>
+</kml>
