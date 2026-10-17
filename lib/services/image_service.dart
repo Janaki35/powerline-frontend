@@ -31,6 +31,10 @@ class ImageService {
 
   /// URL for the HTTP server (for web or network fallback)
   static String getHttpUrl(String rawPath) {
+    final trimmed = rawPath.trim();
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+      return trimmed;
+    }
     final cleaned = cleanPath(rawPath);
     return '${AppConfig.imageServerBaseUrl}/$cleaned';
   }
@@ -156,26 +160,159 @@ class ImageService {
     double? width,
     double? height,
   }) {
-    final cropUrl = getCropUrl(
-      imagePath,
-      bbox,
+    if (bbox.length < 4 || bbox[2] <= 0 || bbox[3] <= 0) {
+      return Container(
+        width: width,
+        height: height,
+        color: const Color(0xFF1E293B),
+        child: const Center(
+          child: Icon(Icons.crop_original, color: Colors.white38, size: 24),
+        ),
+      );
+    }
+
+    return ClientSideCropWidget(
+      imagePath: imagePath,
+      bbox: bbox,
       isDefect: isDefect,
       label: label,
       compType: compType,
       drawBox: drawBox,
-    );
-    return Image.network(
-      cropUrl,
-      fit: fit,
       width: width,
       height: height,
-      errorBuilder: (context, error, stackTrace) {
-        return Container(
-          width: width,
-          height: height,
-          color: const Color(0xFF1E293B),
-          child: const Center(
-            child: Icon(Icons.crop_original, color: Colors.white38, size: 24),
+    );
+  }
+}
+
+/// Client-side zero-backend crop widget
+/// Renders zoomed crop of component detection in-browser from the cached full image.
+class ClientSideCropWidget extends StatelessWidget {
+  final String imagePath;
+  final List<double> bbox;
+  final bool isDefect;
+  final String? label;
+  final String? compType;
+  final bool drawBox;
+  final double? width;
+  final double? height;
+
+  const ClientSideCropWidget({
+    super.key,
+    required this.imagePath,
+    required this.bbox,
+    this.isDefect = false,
+    this.label,
+    this.compType,
+    this.drawBox = true,
+    this.width,
+    this.height,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    // Standard DJI inspection resolution
+    const double imgW = 5184.0;
+    const double imgH = 3888.0;
+
+    final double x = bbox[0];
+    final double y = bbox[1];
+    final double w = bbox[2];
+    final double h = bbox[3];
+
+    final double cx = x + w / 2.0;
+    final double cy = y + h / 2.0;
+
+    // Minimum context padding so components are clearly visible
+    final double minCropW = (w * 2.2).clamp(320.0, imgW);
+    final double minCropH = (h * 2.2).clamp(220.0, imgH);
+
+    final double cropW = minCropW > minCropH * 1.45 ? minCropW : minCropH * 1.45;
+    final double cropH = minCropH > minCropW / 1.45 ? minCropH : minCropW / 1.45;
+
+    final double padX1 = (cx - cropW / 2.0).clamp(0.0, imgW);
+    final double padY1 = (cy - cropH / 2.0).clamp(0.0, imgH);
+    final double padX2 = (cx + cropW / 2.0).clamp(0.0, imgW);
+    final double padY2 = (cy + cropH / 2.0).clamp(0.0, imgH);
+
+    final double actualCropW = padX2 - padX1;
+    final double actualCropH = padY2 - padY1;
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final double targetW = width ?? (constraints.maxWidth.isFinite ? constraints.maxWidth : 160.0);
+        final double targetH = height ?? (constraints.maxHeight.isFinite ? constraints.maxHeight : 118.0);
+
+        if (actualCropW <= 0 || actualCropH <= 0 || targetW <= 0 || targetH <= 0) {
+          return Container(width: targetW, height: targetH, color: const Color(0xFF1E293B));
+        }
+
+        final double scale = targetW / actualCropW;
+        final double renderedImgW = imgW * scale;
+        final double renderedImgH = imgH * scale;
+
+        final double imgLeft = -padX1 * scale;
+        final double imgTop = -padY1 * scale;
+
+        return ClipRect(
+          child: SizedBox(
+            width: targetW,
+            height: targetH,
+            child: Stack(
+              clipBehavior: Clip.hardEdge,
+              children: [
+                Positioned(
+                  left: imgLeft,
+                  top: imgTop,
+                  width: renderedImgW,
+                  height: renderedImgH,
+                  child: Image(
+                    image: ImageService.getImageProvider(imagePath),
+                    fit: BoxFit.fill,
+                    filterQuality: FilterQuality.medium,
+                    errorBuilder: (ctx, err, st) => Container(
+                      color: const Color(0xFF1E293B),
+                      child: const Center(
+                        child: Icon(Icons.crop_original, color: Colors.white24, size: 24),
+                      ),
+                    ),
+                  ),
+                ),
+                if (isDefect && drawBox) ...[
+                  Positioned(
+                    left: (x - padX1) * scale,
+                    top: (y - padY1) * scale,
+                    width: (w * scale).clamp(4.0, targetW),
+                    height: (h * scale).clamp(4.0, targetH),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        border: Border.all(color: const Color(0xFFEF4444), width: 2.0),
+                        borderRadius: BorderRadius.circular(2.0),
+                      ),
+                    ),
+                  ),
+                  if (label != null && label!.isNotEmpty)
+                    Positioned(
+                      left: (x - padX1) * scale,
+                      top: ((y - padY1) * scale - 18.0).clamp(0.0, targetH - 18.0),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEF4444),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                        child: Text(
+                          label!,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ],
+            ),
           ),
         );
       },
