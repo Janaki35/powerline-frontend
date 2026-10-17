@@ -26,8 +26,6 @@ class TowerStructurePanel extends StatefulWidget {
 }
 
 class _TowerStructurePanelState extends State<TowerStructurePanel> {
-  bool _isThermalMode = false;
-
   // Raw image dimension: 1920 x 1080.
   // Crop area focusing on the tower:
   static const double _cropLeft = 620.0;
@@ -39,9 +37,7 @@ class _TowerStructurePanelState extends State<TowerStructurePanel> {
   Widget build(BuildContext context) {
     final hasSelectedCircuit = widget.selectedCircuit != null;
 
-    final imagePath = _isThermalMode && hasSelectedCircuit
-        ? 'DJI_20260328161505_0088_T_seg01_frame_01180.jpg'
-        : 'DJI_20260328161505_0088_S_seg01_frame_01180.jpg';
+    const imagePath = 'DJI_20260328161505_0088_S_seg01_frame_01180.jpg';
 
     return Container(
       width: widget.width ?? 410,
@@ -87,31 +83,7 @@ class _TowerStructurePanelState extends State<TowerStructurePanel> {
                       ],
                     ),
 
-                    // [ RGB | Thermal ] Toggle Pill (matching Screenshot 3: ui_designs/3.png)
-                    if (hasSelectedCircuit)
-                      Container(
-                        padding: const EdgeInsets.all(2),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF1F5F9),
-                          borderRadius: BorderRadius.circular(6),
-                          border: Border.all(color: const Color(0xFFE2E8F0)),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            _buildTogglePill('RGB', !_isThermalMode, () {
-                              if (_isThermalMode) {
-                                setState(() => _isThermalMode = false);
-                              }
-                            }),
-                            _buildTogglePill('Thermal', _isThermalMode, () {
-                              if (!_isThermalMode) {
-                                setState(() => _isThermalMode = true);
-                              }
-                            }),
-                          ],
-                        ),
-                      ),
+
                   ],
                 ),
                 const SizedBox(height: 12),
@@ -354,27 +326,7 @@ class _TowerStructurePanelState extends State<TowerStructurePanel> {
     }
   }
 
-  Widget _buildTogglePill(String title, bool isSelected, VoidCallback onTap) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(4),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-        decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF1967D2) : Colors.transparent,
-          borderRadius: BorderRadius.circular(4),
-        ),
-        child: Text(
-          title,
-          style: TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.bold,
-            color: isSelected ? Colors.white : const Color(0xFF64748B),
-          ),
-        ),
-      ),
-    );
-  }
+
 
   Widget _buildDot(String label, Color color) {
     return Row(

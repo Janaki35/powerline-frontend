@@ -12,9 +12,10 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final _userIdController = TextEditingController(text: 'ops.engineer');
-  final _passwordController = TextEditingController(text: '••••••••');
+  final _userIdController = TextEditingController();
+  final _passwordController = TextEditingController();
   bool _obscurePassword = true;
+  String? _errorMessage;
 
   @override
   void dispose() {
@@ -24,11 +25,29 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _handleSignIn() {
-    widget.onLoginSuccess();
+    final userId = _userIdController.text.trim();
+    final password = _passwordController.text.trim();
+
+    if (userId == 'test_user' && password == '123456') {
+      setState(() {
+        _errorMessage = null;
+      });
+      widget.onLoginSuccess();
+    } else {
+      setState(() {
+        if (userId.isEmpty || password.isEmpty) {
+          _errorMessage = 'Please enter both User ID and password';
+        } else {
+          _errorMessage = 'Invalid username or password';
+        }
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final bool hasError = _errorMessage != null;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF7F5F0),
       body: Stack(
@@ -96,7 +115,40 @@ class _LoginScreenState extends State<LoginScreen> {
                         height: 1.4,
                       ),
                     ),
-                    const SizedBox(height: 28),
+                    const SizedBox(height: 24),
+
+                    // Error Banner if invalid credentials
+                    if (hasError) ...[
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFEF2F2),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: const Color(0xFFFCA5A5)),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.error_outline_rounded,
+                              color: Color(0xFFDC2626),
+                              size: 19,
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                _errorMessage!,
+                                style: const TextStyle(
+                                  color: Color(0xFFDC2626),
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                    ],
 
                     // User ID Label
                     const Text(
@@ -116,8 +168,13 @@ class _LoginScreenState extends State<LoginScreen> {
                         fontSize: 14,
                         color: AppColors.textPrimary,
                       ),
+                      onChanged: (_) {
+                        if (_errorMessage != null) {
+                          setState(() => _errorMessage = null);
+                        }
+                      },
                       decoration: InputDecoration(
-                        hintText: 'e.g. ops.engineer',
+                        hintText: 'e.g. test_user',
                         hintStyle: const TextStyle(
                           color: Color(0xFF94A3B8),
                           fontSize: 14,
@@ -130,16 +187,20 @@ class _LoginScreenState extends State<LoginScreen> {
                         fillColor: Colors.white,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
-                          borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
+                          borderSide: BorderSide(
+                            color: hasError ? const Color(0xFFEF4444) : const Color(0xFFCBD5E1),
+                          ),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
-                          borderSide: const BorderSide(color: Color(0xFFD1D5DB)),
+                          borderSide: BorderSide(
+                            color: hasError ? const Color(0xFFEF4444) : const Color(0xFFD1D5DB),
+                          ),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
-                          borderSide: const BorderSide(
-                            color: AppColors.primaryBlue,
+                          borderSide: BorderSide(
+                            color: hasError ? const Color(0xFFEF4444) : AppColors.primaryBlue,
                             width: 1.5,
                           ),
                         ),
@@ -167,6 +228,11 @@ class _LoginScreenState extends State<LoginScreen> {
                         letterSpacing: 2.0,
                         color: AppColors.textPrimary,
                       ),
+                      onChanged: (_) {
+                        if (_errorMessage != null) {
+                          setState(() => _errorMessage = null);
+                        }
+                      },
                       decoration: InputDecoration(
                         hintText: '••••••••',
                         hintStyle: const TextStyle(
@@ -182,16 +248,20 @@ class _LoginScreenState extends State<LoginScreen> {
                         fillColor: Colors.white,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
-                          borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
+                          borderSide: BorderSide(
+                            color: hasError ? const Color(0xFFEF4444) : const Color(0xFFCBD5E1),
+                          ),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
-                          borderSide: const BorderSide(color: Color(0xFFD1D5DB)),
+                          borderSide: BorderSide(
+                            color: hasError ? const Color(0xFFEF4444) : const Color(0xFFD1D5DB),
+                          ),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
-                          borderSide: const BorderSide(
-                            color: AppColors.primaryBlue,
+                          borderSide: BorderSide(
+                            color: hasError ? const Color(0xFFEF4444) : AppColors.primaryBlue,
                             width: 1.5,
                           ),
                         ),

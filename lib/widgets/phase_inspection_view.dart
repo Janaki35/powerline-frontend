@@ -354,35 +354,7 @@ class _PhaseInspectionViewState extends State<PhaseInspectionView> {
                           ),
                           textAlign: TextAlign.center,
                         ),
-                        const SizedBox(height: 3),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Container(
-                              width: 6,
-                              height: 6,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: currentImage.hasDefect
-                                    ? const Color(0xFFDC2626)
-                                    : const Color(0xFF16A34A),
-                              ),
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              currentImage.hasDefect
-                                  ? 'Findings: DEFECT · Cotter pin missing (${currentImage.missingCotterPinCount} issue${currentImage.missingCotterPinCount > 1 ? 's' : ''}) · Critical'
-                                  : 'Findings: No defect detected among ${currentImage.allDetections.length} detections.',
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
-                                color: currentImage.hasDefect
-                                    ? const Color(0xFFDC2626)
-                                    : const Color(0xFF475569),
-                              ),
-                            ),
-                          ],
-                        ),
+
                       ],
                     ),
                   ),

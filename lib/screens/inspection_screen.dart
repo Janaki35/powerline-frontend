@@ -30,8 +30,8 @@ class _InspectionScreenState extends State<InspectionScreen> {
   bool _isLoading = true;
   String? _errorMessage;
 
-  // Navigation flow starting at Network Map matching Penpot
-  AppView _currentView = AppView.networkMap;
+  // Navigation flow starting at Sign In as the 1st page
+  AppView _currentView = AppView.signIn;
 
   @override
   void initState() {
