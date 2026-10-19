@@ -53,6 +53,7 @@ class _AssetNavigatorPanelState extends State<AssetNavigatorPanel> {
   void didUpdateWidget(covariant AssetNavigatorPanel oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.selectedAssetType != oldWidget.selectedAssetType) {
+      _showSummary = false;
       if (widget.selectedAssetType != null && oldWidget.selectedAssetType == null) {
         _isAssetTypeDropdownOpen = false;
         _isCircuitDropdownOpen = true;
@@ -60,21 +61,21 @@ class _AssetNavigatorPanelState extends State<AssetNavigatorPanel> {
         _isAssetTypeDropdownOpen = false;
         _isCircuitDropdownOpen = false;
         _isPhaseDropdownOpen = false;
-        _showSummary = false;
       }
     }
 
     if (widget.selectedCircuit != oldWidget.selectedCircuit) {
+      _showSummary = false;
       if (widget.selectedCircuit != null) {
         _isCircuitDropdownOpen = false;
         _isPhaseDropdownOpen = true;
       } else {
         _isPhaseDropdownOpen = false;
-        _showSummary = false;
       }
     }
 
     if (widget.selectedPhase != oldWidget.selectedPhase) {
+      _showSummary = false;
       if (widget.selectedPhase != null) {
         _isPhaseDropdownOpen = false;
       }
@@ -343,6 +344,7 @@ class _AssetNavigatorPanelState extends State<AssetNavigatorPanel> {
                           setState(() {
                             _isAssetTypeDropdownOpen = false;
                             _isCircuitDropdownOpen = true;
+                            _showSummary = false;
                           });
                         },
                         borderRadius: BorderRadius.circular(6),
@@ -482,6 +484,7 @@ class _AssetNavigatorPanelState extends State<AssetNavigatorPanel> {
                               setState(() {
                                 _isCircuitDropdownOpen = false;
                                 _isPhaseDropdownOpen = false;
+                                _showSummary = false;
                               });
                             },
                             borderRadius: BorderRadius.circular(6),
@@ -641,6 +644,7 @@ class _AssetNavigatorPanelState extends State<AssetNavigatorPanel> {
         }
         setState(() {
           _isPhaseDropdownOpen = false;
+          _showSummary = false;
         });
       },
       borderRadius: BorderRadius.circular(6),

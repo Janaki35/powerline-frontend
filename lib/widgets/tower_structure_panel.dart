@@ -192,11 +192,7 @@ class _TowerStructurePanelState extends State<TowerStructurePanel> {
                       child: SizedBox(
                         width: renderW,
                         height: renderH,
-                        child: GestureDetector(
-                          onTapUp: (details) {
-                            if (!hasSelectedCircuit || widget.onSelectPhase == null) return;
-                            _handleTowerTap(details.localPosition, scale);
-                          },
+                        child: IgnorePointer(
                           child: Stack(
                             children: [
                               // 1. Cropped & Scaled Base Tower Photo
@@ -306,26 +302,7 @@ class _TowerStructurePanelState extends State<TowerStructurePanel> {
     );
   }
 
-  void _handleTowerTap(Offset localPos, double scale) {
-    if (widget.selectedCircuit == null) return;
-    final isSW = widget.selectedCircuit!.circuitId.contains('SW');
 
-    final double yR = isSW ? (295.0 - _cropTop) * scale : (289.7 - _cropTop) * scale;
-    final double yY = isSW ? (448.0 - _cropTop) * scale : (455.2 - _cropTop) * scale;
-    final double yB = isSW ? (600.0 - _cropTop) * scale : (593.9 - _cropTop) * scale;
-
-    const threshold = 35.0;
-    if ((localPos.dy - yR).abs() < threshold) {
-      final p = widget.selectedCircuit!.phases['R'];
-      if (p != null) widget.onSelectPhase!(p);
-    } else if ((localPos.dy - yY).abs() < threshold) {
-      final p = widget.selectedCircuit!.phases['Y'];
-      if (p != null) widget.onSelectPhase!(p);
-    } else if ((localPos.dy - yB).abs() < threshold) {
-      final p = widget.selectedCircuit!.phases['B'];
-      if (p != null) widget.onSelectPhase!(p);
-    }
-  }
 
 
 

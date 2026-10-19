@@ -56,13 +56,25 @@ class MapTower {
 class NetworkMapOverviewView extends StatefulWidget {
   final Tower tower;
   final VoidCallback onLogout;
-  final Function(Circuit? circuit, Phase? phase) onOpenInspection;
+  final Function(Circuit? circuit, Phase? phase, [String? towerId]) onOpenInspection;
+  final String? initialDate;
+  final String? initialVoltage;
+  final String? initialTowerId;
+  final ValueChanged<String>? onDateChanged;
+  final ValueChanged<String>? onVoltageChanged;
+  final ValueChanged<String>? onTowerChanged;
 
   const NetworkMapOverviewView({
     super.key,
     required this.tower,
     required this.onLogout,
     required this.onOpenInspection,
+    this.initialDate,
+    this.initialVoltage,
+    this.initialTowerId,
+    this.onDateChanged,
+    this.onVoltageChanged,
+    this.onTowerChanged,
   });
 
   @override
@@ -292,9 +304,81 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
 
   bool _showCalendarDropdown = false;
   bool _showVoltageDropdown = false;
+  String? _expandedVoltageCategory;
   DateTime _calendarDisplayMonth = DateTime(2026, 4, 1);
   bool _showYearDropdown = false;
   StreamSubscription<MapEvent>? _mapEventSub;
+
+  final GlobalKey _calendarPopoverKey = GlobalKey();
+  final GlobalKey _calendarButtonKey = GlobalKey();
+  final GlobalKey _voltagePopoverKey = GlobalKey();
+  final GlobalKey _voltageButtonKey = GlobalKey();
+  final GlobalKey _baseMapPopoverKey = GlobalKey();
+  final GlobalKey _baseMapButtonKey = GlobalKey();
+  final GlobalKey _infoPopoverKey = GlobalKey();
+  final GlobalKey _infoButtonKey = GlobalKey();
+
+  bool _isPointerInsideKey(GlobalKey? key, Offset position) {
+    if (key == null) return false;
+    final ctx = key.currentContext;
+    if (ctx == null || !ctx.mounted) return false;
+    final box = ctx.findRenderObject();
+    if (box is RenderBox && box.hasSize && box.attached) {
+      try {
+        final origin = box.localToGlobal(Offset.zero);
+        final rect = origin & box.size;
+        return rect.contains(position);
+      } catch (_) {
+        return false;
+      }
+    }
+    return false;
+  }
+
+  void _handleGlobalPointerDown(PointerDownEvent event) {
+    bool stateChanged = false;
+
+    if (_showCalendarDropdown) {
+      final insideCalendar = _isPointerInsideKey(_calendarPopoverKey, event.position);
+      final insideButton = _isPointerInsideKey(_calendarButtonKey, event.position);
+      if (!insideCalendar && !insideButton) {
+        _showCalendarDropdown = false;
+        _showYearDropdown = false;
+        stateChanged = true;
+      }
+    }
+
+    if (_showVoltageDropdown) {
+      final insideVoltage = _isPointerInsideKey(_voltagePopoverKey, event.position);
+      final insideButton = _isPointerInsideKey(_voltageButtonKey, event.position);
+      if (!insideVoltage && !insideButton) {
+        _showVoltageDropdown = false;
+        stateChanged = true;
+      }
+    }
+
+    if (_showBaseMapPopover) {
+      final insidePopover = _isPointerInsideKey(_baseMapPopoverKey, event.position);
+      final insideButton = _isPointerInsideKey(_baseMapButtonKey, event.position);
+      if (!insidePopover && !insideButton) {
+        _showBaseMapPopover = false;
+        stateChanged = true;
+      }
+    }
+
+    if (_showInfoPopover) {
+      final insidePopover = _isPointerInsideKey(_infoPopoverKey, event.position);
+      final insideButton = _isPointerInsideKey(_infoButtonKey, event.position);
+      if (!insidePopover && !insideButton) {
+        _showInfoPopover = false;
+        stateChanged = true;
+      }
+    }
+
+    if (stateChanged) {
+      setState(() {});
+    }
+  }
 
   Future<void> _toggleGrid() async {
     if (!_isGridActive) {
@@ -327,6 +411,8 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
         _isGridActive = false;
         _selectedGridRoute = null;
         _selectedGridSubstation = null;
+        _showCalendarDropdown = false;
+        _showVoltageDropdown = false;
       });
       // Do NOT change zoom level or move map when toggling OFF - remain at the current zoom level
     }
@@ -362,8 +448,51 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
         defectCount: actualDefects,
       );
     }
-    // Default selected tower on 20 Apr 2026
-    _selectedTower = _allMapTowers.firstWhere((t) => t.id == 'T01-400KV-SA');
+    // Restore preserved date, voltage, and tower selections from AppState
+    if (widget.initialDate != null && widget.initialDate!.isNotEmpty) {
+      _selectedDate = widget.initialDate!;
+    }
+    if (widget.initialVoltage != null && widget.initialVoltage!.isNotEmpty) {
+      _selectedVoltage = widget.initialVoltage!;
+    }
+
+    // Find towers matching the initial active date and voltage
+    final matchingTowers = _allMapTowers.where((t) =>
+        (_selectedDate == 'All dates' || t.surveyDate == _selectedDate) &&
+        (_selectedVoltage == 'All voltages' || t.voltage == _selectedVoltage)).toList();
+
+    if (widget.initialTowerId != null && widget.initialTowerId!.isNotEmpty) {
+      final match = matchingTowers.where((t) => t.id == widget.initialTowerId);
+      if (match.isNotEmpty) {
+        _selectedTower = match.first;
+      } else if (matchingTowers.isNotEmpty) {
+        _selectedTower = matchingTowers.first;
+      } else {
+        _selectedTower = _allMapTowers.firstWhere((t) => t.id == 'T01-400KV-SA');
+      }
+    } else if (matchingTowers.isNotEmpty) {
+      _selectedTower = matchingTowers.first;
+    } else {
+      _selectedTower = _allMapTowers.firstWhere((t) => t.id == 'T01-400KV-SA');
+    }
+
+    // Set camera center and zoom based on the active selected date so towers are immediately visible
+    if (_selectedDate == '20 Apr 2026') {
+      _currentCenter = const LatLng(20.823400, 85.268100);
+      _currentZoom = 16.5;
+    } else if (_selectedDate == '16 Apr 2026') {
+      _currentCenter = const LatLng(20.829000, 85.259000);
+      _currentZoom = 15.0;
+    } else if (_selectedDate == '28 Mar 2026') {
+      _currentCenter = const LatLng(20.803800, 85.286600);
+      _currentZoom = 16.0;
+    } else if (_selectedDate == '12 Apr 2026') {
+      _currentCenter = const LatLng(20.803100, 85.208485);
+      _currentZoom = 16.5;
+    } else {
+      _currentCenter = _selectedTower.location;
+      _currentZoom = 16.0;
+    }
     _mapEventSub = _mapController.mapEventStream.listen((event) {
       if (mounted && (event.camera.rotation - _currentRotation).abs() > 0.01) {
         setState(() {
@@ -419,29 +548,40 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
     return list;
   }
 
-  List<String> get _availableVoltagesForSelectedDate {
-    final towers = (_selectedDate == 'All dates')
-        ? _allMapTowers
-        : _allMapTowers.where((t) => t.surveyDate == _selectedDate).toList();
-    final voltages = <String>['All voltages'];
-    for (final t in towers) {
-      if (!voltages.contains(t.voltage)) {
-        voltages.add(t.voltage);
+  void _selectVoltage(String voltage, [List<MapTower>? towers]) {
+    setState(() {
+      _selectedVoltage = voltage;
+      _showVoltageDropdown = false;
+      _showCalendarDropdown = false;
+      _expandedVoltageCategory = null;
+
+      final targetTowers = (towers != null && towers.isNotEmpty)
+          ? towers
+          : (voltage == 'All voltages'
+              ? ((_selectedDate == 'All dates')
+                  ? _allMapTowers
+                  : _allMapTowers.where((t) => t.surveyDate == _selectedDate).toList())
+              : _allMapTowers.where((t) =>
+                  (_selectedDate == 'All dates' || t.surveyDate == _selectedDate) &&
+                  t.voltage == voltage).toList());
+
+      if (targetTowers.isNotEmpty) {
+        _selectedTower = targetTowers.first;
+        _currentCenter = _selectedTower.location;
+        _mapController.move(_currentCenter, _currentZoom);
       }
-    }
-    return voltages;
+      widget.onVoltageChanged?.call(voltage);
+      widget.onTowerChanged?.call(_selectedTower.id);
+    });
   }
 
   void _onDateSelected(String date) {
     setState(() {
       _selectedDate = date;
       _showCalendarDropdown = false;
-
-      // Adjust available voltage
-      final validVoltages = _availableVoltagesForSelectedDate;
-      if (!validVoltages.contains(_selectedVoltage)) {
-        _selectedVoltage = 'All voltages';
-      }
+      _showVoltageDropdown = false;
+      _expandedVoltageCategory = null;
+      _selectedVoltage = 'All voltages';
 
       // Center map on the towers for this date
       final dateTowers = (date == 'All dates')
@@ -468,6 +608,9 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
         }
         _mapController.move(_currentCenter, _currentZoom);
       }
+      widget.onDateChanged?.call(date);
+      widget.onVoltageChanged?.call('All voltages');
+      widget.onTowerChanged?.call(_selectedTower.id);
     });
   }
 
@@ -501,26 +644,9 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF1F5F9),
-      body: GestureDetector(
+      body: Listener(
         behavior: HitTestBehavior.translucent,
-        onTap: () {
-          if (_showCalendarDropdown ||
-              _showVoltageDropdown ||
-              _showBaseMapPopover ||
-              _showInfoPopover ||
-              _selectedGridRoute != null ||
-              _selectedGridSubstation != null) {
-            setState(() {
-              _showCalendarDropdown = false;
-              _showVoltageDropdown = false;
-              _showBaseMapPopover = false;
-              _showInfoPopover = false;
-              _showYearDropdown = false;
-              _selectedGridRoute = null;
-              _selectedGridSubstation = null;
-            });
-          }
-        },
+        onPointerDown: _handleGlobalPointerDown,
         child: Stack(
           children: [
             // 1. BASE VIEW: Interactive Map or Table View
@@ -543,7 +669,10 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
               Positioned(
                 top: 72,
                 left: math.max(12.0, math.min(250.0, screenWidth - 266.0)),
-                child: _buildCalendarPopover(screenWidth),
+                child: KeyedSubtree(
+                  key: _calendarPopoverKey,
+                  child: _buildCalendarPopover(screenWidth),
+                ),
               ),
 
             // 4. VOLTAGE DROPDOWN OVERLAY
@@ -551,7 +680,10 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
               Positioned(
                 top: 72,
                 left: math.max(12.0, math.min(365.0, screenWidth - 306.0)),
-                child: _buildVoltagePopover(screenWidth),
+                child: KeyedSubtree(
+                  key: _voltagePopoverKey,
+                  child: _buildVoltagePopover(screenWidth),
+                ),
               ),
 
             // 5. BASEMAP SWITCHER POPOVER
@@ -559,7 +691,10 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
               Positioned(
                 right: (_isSidebarOpen && !isMobile) ? 490 : 80,
                 top: 200,
-                child: _buildBaseMapPopover(),
+                child: KeyedSubtree(
+                  key: _baseMapPopoverKey,
+                  child: _buildBaseMapPopover(),
+                ),
               ),
 
             // 6. ABOUT THIS MAP POPOVER
@@ -567,7 +702,10 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
               Positioned(
                 right: (_isSidebarOpen && !isMobile) ? 490 : 80,
                 top: 250,
-                child: _buildAboutThisMapPopover(),
+                child: KeyedSubtree(
+                  key: _infoPopoverKey,
+                  child: _buildAboutThisMapPopover(),
+                ),
               ),
 
             // 7. GRID ROUTE DETAIL POPOVER
@@ -610,9 +748,7 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
     // Distinct line segments among visible towers
     final polylines = <Polyline>[];
     final spanMidpointMarkers = <Marker>[];
-    final processedPairs = <String>{};
-
-    // 1. Grid polylines from osm_power_routes.geojson and transmission_towers.kml
+    // 1. Grid polylines from osm_power_routes.geojson
     if (_isGridActive && _gridData != null) {
       for (final route in _gridData!.routes) {
         polylines.add(
@@ -623,28 +759,26 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
           ),
         );
       }
-      for (final seg in _gridData!.kmlSegments) {
-        polylines.add(
-          Polyline(
-            points: seg.points,
-            color: const Color(0xFF1E293B),
-            strokeWidth: seg.strokeWidth,
-          ),
-        );
-      }
     }
 
-    // 2. Tower connecting segments
-    for (final tower in visibleTowers) {
+    // 2. Tower connecting line segment
+    // When Grid is active: show connecting line ONLY for the currently selected tower.
+    // When Grid is inactive: show connecting lines for all visible tower pairs.
+    final towersForConnectingLines = _isGridActive ? [_selectedTower] : visibleTowers;
+    final processedPairs = <String>{};
+
+    for (final tower in towersForConnectingLines) {
       final pairKey = [tower.id, tower.partnerTowerId]..sort();
       final key = pairKey.join('_');
-      if (!processedPairs.contains(key)) {
-        processedPairs.add(key);
-        final partner = _allMapTowers.firstWhere(
-          (t) => t.id == tower.partnerTowerId,
-          orElse: () => tower,
-        );
+      if (processedPairs.contains(key)) continue;
+      processedPairs.add(key);
 
+      final partner = _allMapTowers.firstWhere(
+        (t) => t.id == tower.partnerTowerId,
+        orElse: () => tower,
+      );
+
+      if (partner.id != tower.id) {
         double towerSegWidth = 2.0;
         if (tower.voltage.contains('400')) {
           towerSegWidth = 4.2;
@@ -666,8 +800,12 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
         // Span corridor label pill alongside the connecting line (when zoomed in)
         if (!_isGridActive || _currentZoom >= 14.5) {
           // Sort north-to-south for consistent offset and orientation
-          final topPoint = tower.location.latitude >= partner.location.latitude ? tower.location : partner.location;
-          final bottomPoint = tower.location.latitude < partner.location.latitude ? tower.location : partner.location;
+          final topPoint = tower.location.latitude >= partner.location.latitude
+              ? tower.location
+              : partner.location;
+          final bottomPoint = tower.location.latitude < partner.location.latitude
+              ? tower.location
+              : partner.location;
 
           // Position exactly at the center (50% midpoint) along the span
           final midLat = (topPoint.latitude + bottomPoint.latitude) / 2.0;
@@ -755,54 +893,18 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
       // Substation markers (Always styled with iconic [⚡] + [Name Substation] chip matching reference)
       for (final sub in _gridData!.substations) {
         if (sub.isPrimary) {
-          final isB = sub.name.contains('Meramundali B');
-          final markerLoc = isB ? const LatLng(20.8308, 85.2482) : const LatLng(20.8228, 85.2520);
           final isSelected = _selectedGridSubstation?.id == sub.id;
 
           markers.add(
             Marker(
-              point: markerLoc,
-              width: 240,
+              point: sub.location,
+              width: 260,
               height: 38,
-              alignment: const Alignment(-0.875, 0.0),
+              alignment: const Alignment(0.875, 0.0),
               child: _buildSubstationBadge(sub, isSelected),
             ),
           );
         }
-      }
-    } else if (!_isGridActive && _currentZoom < 14.5) {
-      // When grid is not active, ensure both primary Meramundali substation badges are displayed when zoomed out
-      const primarySubstations = [
-        GridSubstation(
-          id: 'osm_meramundali_b',
-          name: 'Meramundali B',
-          voltage: '400 kV',
-          village: 'Meramundali',
-          location: LatLng(20.8308, 85.2482),
-          polygonPoints: [],
-          isPrimary: true,
-        ),
-        GridSubstation(
-          id: 'osm_meramundali',
-          name: 'Meramundali',
-          voltage: '400 kV',
-          village: 'Meramundali',
-          location: LatLng(20.8228, 85.2520),
-          polygonPoints: [],
-          isPrimary: true,
-        ),
-      ];
-      for (final primarySub in primarySubstations) {
-        final isSelected = _selectedGridSubstation?.id == primarySub.id;
-        markers.add(
-          Marker(
-            point: primarySub.location,
-            width: 240,
-            height: 38,
-            alignment: const Alignment(-0.875, 0.0),
-            child: _buildSubstationBadge(primarySub, isSelected),
-          ),
-        );
       }
     }
 
@@ -833,7 +935,7 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
         markers.add(
           Marker(
             point: markerLoc,
-            width: isSelected ? 240 : 22,
+            width: isSelected ? 300 : 22,
             height: isSelected ? 60 : 22,
             alignment: isSelected ? Alignment.bottomCenter : Alignment.center,
             child: _buildRouteMarker(route, isSelected),
@@ -863,6 +965,8 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
                   _isSidebarOpen = true;
                   _showBaseMapPopover = false;
                   _showInfoPopover = false;
+                  _showCalendarDropdown = false;
+                  _showVoltageDropdown = false;
                 });
               },
             ),
@@ -904,6 +1008,10 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
                 setState(() {
                   _currentZoom = 16.0;
                   _currentCenter = clusterCenter;
+                  _showCalendarDropdown = false;
+                  _showVoltageDropdown = false;
+                  _showBaseMapPopover = false;
+                  _showInfoPopover = false;
                 });
                 _mapController.move(clusterCenter, 16.0);
               },
@@ -1088,6 +1196,19 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
               initialRotation: _currentRotation,
               minZoom: 4.0,
               maxZoom: 19.0,
+              onTap: (tapPosition, point) {
+                if (_showCalendarDropdown ||
+                    _showVoltageDropdown ||
+                    _showBaseMapPopover ||
+                    _showInfoPopover) {
+                  setState(() {
+                    _showCalendarDropdown = false;
+                    _showVoltageDropdown = false;
+                    _showBaseMapPopover = false;
+                    _showInfoPopover = false;
+                  });
+                }
+              },
               interactionOptions: InteractionOptions(
                 flags: InteractiveFlag.all,
                 cursorKeyboardRotationOptions: CursorKeyboardRotationOptions(
@@ -1351,6 +1472,7 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
 
   Widget _buildBaseMapButton() {
     return Container(
+      key: _baseMapButtonKey,
       width: 48,
       height: 48,
       decoration: BoxDecoration(
@@ -1390,6 +1512,7 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
 
   Widget _buildAboutThisMapButton() {
     return Container(
+      key: _infoButtonKey,
       width: 48,
       height: 48,
       decoration: BoxDecoration(
@@ -1779,6 +1902,7 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
             children: [
               // Survey Date Filter Button
               InkWell(
+                key: _calendarButtonKey,
                 onTap: () {
                   setState(() {
                     _showCalendarDropdown = !_showCalendarDropdown;
@@ -1854,10 +1978,12 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
 
               // Voltage Filter Button (Flow depends on selected date)
               InkWell(
+                key: _voltageButtonKey,
                 onTap: () {
                   setState(() {
                     _showVoltageDropdown = !_showVoltageDropdown;
                     _showCalendarDropdown = false;
+                    _expandedVoltageCategory = null;
                   });
                 },
                 borderRadius: BorderRadius.circular(6),
@@ -1888,7 +2014,9 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
                           final voltageTowers = (_selectedVoltage == 'All voltages')
                               ? dateTowers
                               : dateTowers.where((t) => t.voltage == _selectedVoltage).toList();
-                          final primaryTower = voltageTowers.isNotEmpty ? voltageTowers.first : null;
+                          final primaryTower = (_selectedTower.voltage == _selectedVoltage && voltageTowers.contains(_selectedTower))
+                              ? _selectedTower
+                              : (voltageTowers.isNotEmpty ? voltageTowers.first : null);
                           final corridorInfo = primaryTower != null ? TowerCorridorService.getInfo(primaryTower.name) : null;
 
                           if (_selectedVoltage != 'All voltages' && corridorInfo != null) {
@@ -1959,7 +2087,13 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
             mainAxisSize: MainAxisSize.min,
             children: [
               InkWell(
-                onTap: () => setState(() => _isTableView = false),
+                onTap: () => setState(() {
+                  _isTableView = false;
+                  _showCalendarDropdown = false;
+                  _showVoltageDropdown = false;
+                  _showBaseMapPopover = false;
+                  _showInfoPopover = false;
+                }),
                 borderRadius: BorderRadius.circular(7),
                 child: Container(
                   height: 38,
@@ -1989,7 +2123,13 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
                 ),
               ),
               InkWell(
-                onTap: () => setState(() => _isTableView = true),
+                onTap: () => setState(() {
+                  _isTableView = true;
+                  _showCalendarDropdown = false;
+                  _showVoltageDropdown = false;
+                  _showBaseMapPopover = false;
+                  _showInfoPopover = false;
+                }),
                 borderRadius: BorderRadius.circular(7),
                 child: Container(
                   height: 38,
@@ -2393,6 +2533,12 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
         if (!voltagesOnDate.contains(v)) voltagesOnDate.add(v);
       }
     }
+    // Sort highest voltage first (e.g. 400 kV > 220 kV > 135 kV)
+    voltagesOnDate.sort((a, b) {
+      final aVal = int.tryParse(a.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
+      final bVal = int.tryParse(b.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
+      return bVal.compareTo(aVal);
+    });
 
     final popoverWidth = screenWidth != null ? math.min(290.0, screenWidth - 24.0) : 290.0;
 
@@ -2432,12 +2578,7 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
 
           // Option: All voltages
           InkWell(
-            onTap: () {
-              setState(() {
-                _selectedVoltage = 'All voltages';
-                _showVoltageDropdown = false;
-              });
-            },
+            onTap: () => _selectVoltage('All voltages'),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
               color: _selectedVoltage == 'All voltages' ? const Color(0xFFF8FAFC) : Colors.transparent,
@@ -2500,21 +2641,12 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
 
         corridorCards.add(
           Padding(
-            padding: const EdgeInsets.fromLTRB(14, 0, 10, 8),
+            padding: const EdgeInsets.only(left: 38, top: 2, bottom: 6, right: 14),
             child: InkWell(
-              onTap: () {
-                setState(() {
-                  _selectedVoltage = voltage;
-                  _showVoltageDropdown = false;
-                });
-              },
-              child: Container(
-                padding: const EdgeInsets.only(left: 10, top: 4, bottom: 4),
-                decoration: const BoxDecoration(
-                  border: Border(
-                    left: BorderSide(color: Color(0xFFCBD5E1), width: 1.5),
-                  ),
-                ),
+              onTap: () => _selectVoltage(voltage, towers),
+              borderRadius: BorderRadius.circular(4),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 2),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -2530,7 +2662,7 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
                     Text(
                       subtitle,
                       style: const TextStyle(
-                        fontSize: 11,
+                        fontSize: 10.5,
                         color: Color(0xFF64748B),
                       ),
                     ),
@@ -2543,32 +2675,34 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
       }
     }
 
+    final isExpanded = _expandedVoltageCategory == voltage;
+
     if (isSelected) {
-      // Selected state with light blue background container, checkmark, dash, and corridor card
-      return Container(
-        margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-        decoration: BoxDecoration(
-          color: const Color(0xFFEEF5FD),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            InkWell(
+      // Selected state: Light blue pill, checkmark, dark dash, bold blue text, blue count, chevron (up when expanded, down when collapsed)
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            decoration: BoxDecoration(
+              color: const Color(0xFFEEF5FD),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: InkWell(
               onTap: () {
                 setState(() {
-                  _selectedVoltage = voltage;
+                  _expandedVoltageCategory = isExpanded ? null : voltage;
                 });
               },
               borderRadius: BorderRadius.circular(8),
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
                 child: Row(
                   children: [
                     const Icon(Icons.check, size: 14, color: Color(0xFF1E60B5)),
                     const SizedBox(width: 8),
                     Container(
-                      width: 12,
+                      width: 14,
                       height: 2.2,
                       decoration: BoxDecoration(
                         color: const Color(0xFF1E293B),
@@ -2595,57 +2729,77 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
                       ),
                     ),
                     const SizedBox(width: 6),
-                    const Icon(Icons.keyboard_arrow_up, size: 16, color: Color(0xFF1E60B5)),
+                    Icon(
+                      isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                      size: 16,
+                      color: const Color(0xFF1E60B5),
+                    ),
                   ],
                 ),
               ),
             ),
-            ...corridorCards,
-          ],
-        ),
+          ),
+          if (isExpanded) ...corridorCards,
+        ],
       );
     } else {
-      // Unselected state
-      return InkWell(
-        onTap: () {
-          setState(() {
-            _selectedVoltage = voltage;
-            _showVoltageDropdown = false;
-          });
-        },
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: Row(
-            children: [
-              Container(
-                width: 12,
-                height: 2.2,
-                margin: const EdgeInsets.only(right: 8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF64748B),
-                  borderRadius: BorderRadius.circular(1),
+      // Unselected state: aligned grey dash, dark text, count, chevron (up when expanded, down when collapsed)
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            child: InkWell(
+              onTap: () {
+                setState(() {
+                  _expandedVoltageCategory = isExpanded ? null : voltage;
+                });
+              },
+              borderRadius: BorderRadius.circular(8),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                child: Row(
+                  children: [
+                    const SizedBox(width: 22),
+                    Container(
+                      width: 14,
+                      height: 2.2,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF64748B),
+                        borderRadius: BorderRadius.circular(1),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        voltage,
+                        style: const TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF1E293B),
+                        ),
+                      ),
+                    ),
+                    Text(
+                      '$count towers',
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: Color(0xFF64748B),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Icon(
+                      isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                      size: 16,
+                      color: const Color(0xFF64748B),
+                    ),
+                  ],
                 ),
               ),
-              Expanded(
-                child: Text(
-                  voltage,
-                  style: const TextStyle(
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w500,
-                    color: Color(0xFF1E293B),
-                  ),
-                ),
-              ),
-              Text(
-                '$count towers',
-                style: const TextStyle(
-                  fontSize: 11,
-                  color: Color(0xFF64748B),
-                ),
-              ),
-            ],
+            ),
           ),
-        ),
+          if (isExpanded) ...corridorCards,
+        ],
       );
     }
   }
@@ -2679,7 +2833,11 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 InkWell(
-                  onTap: () => setState(() => _isSidebarOpen = false),
+                  onTap: () => setState(() {
+                    _isSidebarOpen = false;
+                    _showCalendarDropdown = false;
+                    _showVoltageDropdown = false;
+                  }),
                   child: Row(
                     children: [
                       const Icon(Icons.chevron_left, size: 18, color: Color(0xFF1E60B5)),
@@ -2703,7 +2861,11 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
                   ),
                   child: IconButton(
                     icon: const Icon(Icons.close, size: 16, color: Color(0xFF64748B)),
-                    onPressed: () => setState(() => _isSidebarOpen = false),
+                    onPressed: () => setState(() {
+                      _isSidebarOpen = false;
+                      _showCalendarDropdown = false;
+                      _showVoltageDropdown = false;
+                    }),
                     padding: EdgeInsets.zero,
                   ),
                 ),
@@ -2883,7 +3045,7 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
                 children: [
                   ElevatedButton.icon(
                     onPressed: () {
-                      widget.onOpenInspection(null, null);
+                      widget.onOpenInspection(null, null, _selectedTower.id);
                     },
                     icon: const Icon(Icons.description_outlined, size: 16),
                     label: const Text(
@@ -3528,6 +3690,10 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
                       setState(() {
                         _selectedTower = tower;
                         _isSidebarOpen = true;
+                        _showCalendarDropdown = false;
+                        _showVoltageDropdown = false;
+                        _showBaseMapPopover = false;
+                        _showInfoPopover = false;
                       });
                     },
                     child: Container(
@@ -3717,6 +3883,10 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
                                   setState(() {
                                     _selectedTower = tower;
                                     _isSidebarOpen = true;
+                                    _showCalendarDropdown = false;
+                                    _showVoltageDropdown = false;
+                                    _showBaseMapPopover = false;
+                                    _showInfoPopover = false;
                                   });
                                 },
                                 child: const Text(
@@ -4034,7 +4204,7 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
                         ),
                         const SizedBox(width: 6),
                         const Text(
-                          'Substation',
+                          'Source',
                           style: TextStyle(fontSize: 10, color: Color(0xFF334155), fontWeight: FontWeight.w500),
                         ),
                       ],
@@ -4179,20 +4349,30 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Container(
-                  width: 10,
-                  height: 3,
+                  width: 14,
+                  height: 14,
                   decoration: BoxDecoration(
-                    color: route.color,
-                    borderRadius: BorderRadius.circular(1.5),
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: route.color, width: 1.2),
+                  ),
+                  child: Center(
+                    child: _ItalicInfoIcon(
+                      size: 9.0,
+                      color: route.color,
+                    ),
                   ),
                 ),
                 const SizedBox(width: 6),
-                Text(
-                  route.calloutLabel.isNotEmpty ? route.calloutLabel : route.name,
-                  style: const TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF1E293B),
+                Flexible(
+                  child: Text(
+                    route.calloutLabel.isNotEmpty ? route.calloutLabel : route.name,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1E293B),
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -4255,13 +4435,9 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
         ],
       ),
       child: Center(
-        child: Container(
-          width: isSelected ? 10 : 8.5,
-          height: isSelected ? 2.4 : 2.0,
-          decoration: BoxDecoration(
-            color: route.color,
-            borderRadius: BorderRadius.circular(1),
-          ),
+        child: _ItalicInfoIcon(
+          size: isSelected ? 12.5 : 10.5,
+          color: route.color,
         ),
       ),
     );
@@ -4415,13 +4591,16 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
                     ),
                   ],
                 ),
-                child: Text(
-                  displayName,
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    color: isSelected ? const Color(0xFF7631EC) : const Color(0xFF1E293B),
-                    letterSpacing: -0.1,
+                child: Flexible(
+                  child: Text(
+                    displayName,
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: isSelected ? const Color(0xFF7631EC) : const Color(0xFF1E293B),
+                      letterSpacing: -0.1,
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ),
@@ -5077,6 +5256,108 @@ class _SatelliteThumbnailPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+/// Curved italic info "i" icon exactly replicating the user provided vector symbol
+class _ItalicInfoIcon extends StatelessWidget {
+  final double size;
+  final Color color;
+
+  const _ItalicInfoIcon({
+    required this.size,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final w = size * 0.54;
+    return SizedBox(
+      width: w,
+      height: size,
+      child: CustomPaint(
+        size: Size(w, size),
+        painter: _ItalicInfoPainter(color: color),
+      ),
+    );
+  }
+}
+
+class _ItalicInfoPainter extends CustomPainter {
+  final Color color;
+
+  const _ItalicInfoPainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.fill
+      ..isAntiAlias = true;
+
+    final w = size.width;
+    final h = size.height;
+
+    // 1. Circular dot at the top
+    final dotCenter = Offset(0.694 * w, 0.122 * h);
+    final dotRadius = 0.122 * h;
+    canvas.drawCircle(dotCenter, dotRadius, paint);
+
+    // 2. Curved italic body path matching the exact user silhouette
+    final path = Path();
+    const pts = [
+      Offset(0.5075, 0.2992),
+      Offset(0.7164, 0.2992),
+      Offset(0.791, 0.3307),
+      Offset(0.791, 0.3937),
+      Offset(0.7612, 0.4252),
+      Offset(0.7015, 0.5669),
+      Offset(0.6716, 0.5984),
+      Offset(0.6269, 0.7165),
+      Offset(0.5821, 0.7795),
+      Offset(0.5672, 0.8425),
+      Offset(0.6269, 0.8819),
+      Offset(0.6716, 0.8898),
+      Offset(0.8657, 0.8819),
+      Offset(1.0, 0.8504),
+      Offset(1.0, 0.8976),
+      Offset(0.9403, 0.9213),
+      Offset(0.7612, 0.9606),
+      Offset(0.7164, 0.9606),
+      Offset(0.6119, 0.9843),
+      Offset(0.4925, 0.9921),
+      Offset(0.4776, 1.0),
+      Offset(0.2985, 1.0),
+      Offset(0.2537, 0.9921),
+      Offset(0.209, 0.9685),
+      Offset(0.209, 0.9055),
+      Offset(0.2388, 0.874),
+      Offset(0.2836, 0.7559),
+      Offset(0.3433, 0.6693),
+      Offset(0.3881, 0.5512),
+      Offset(0.4179, 0.5197),
+      Offset(0.4328, 0.4567),
+      Offset(0.4179, 0.4409),
+      Offset(0.3433, 0.4094),
+      Offset(0.194, 0.4094),
+      Offset(0.0448, 0.4331),
+      Offset(0.0, 0.4488),
+      Offset(0.0, 0.4016),
+      Offset(0.0597, 0.378),
+      Offset(0.2388, 0.3386),
+      Offset(0.4925, 0.3071),
+    ];
+
+    path.moveTo(pts[0].dx * w, pts[0].dy * h);
+    for (int i = 1; i < pts.length; i++) {
+      path.lineTo(pts[i].dx * w, pts[i].dy * h);
+    }
+    path.close();
+
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(_ItalicInfoPainter oldDelegate) => oldDelegate.color != color;
 }
 
 

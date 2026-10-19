@@ -1,9 +1,10 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../config/app_theme.dart';
 import '../models/inspection_model.dart';
 import '../services/image_service.dart';
 
-class DetailedCropsCarousel extends StatelessWidget {
+class DetailedCropsCarousel extends StatefulWidget {
   final InspectionImage image;
   final Phase? phase;
   final ComponentDetection? selectedDetection;
@@ -18,7 +19,31 @@ class DetailedCropsCarousel extends StatelessWidget {
   });
 
   @override
+  State<DetailedCropsCarousel> createState() => _DetailedCropsCarouselState();
+}
+
+class _DetailedCropsCarouselState extends State<DetailedCropsCarousel> {
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void didUpdateWidget(covariant DetailedCropsCarousel oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.image.imagePath != widget.image.imagePath) {
+      if (_scrollController.hasClients) {
+        _scrollController.jumpTo(0.0);
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final image = widget.image;
     // Build display items dynamically from the current image's detections from JSON
     final List<Map<String, dynamic>> displayItems = [];
 
@@ -83,12 +108,9 @@ class DetailedCropsCarousel extends StatelessWidget {
     }
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+      padding: const EdgeInsets.fromLTRB(20, 10, 20, 14),
       decoration: const BoxDecoration(
         color: Colors.white,
-        border: Border(
-          top: BorderSide(color: Color(0xFFE2E8F0), width: 1),
-        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -116,10 +138,14 @@ class DetailedCropsCarousel extends StatelessWidget {
           Expanded(
             child: LayoutBuilder(
               builder: (context, constraints) {
-                final crossAxisCount = constraints.maxWidth >= 620
+                // Reserve 16px channel width for the scrollbar so cards never overlap it
+                const scrollbarChannelWidth = 16.0;
+                final availableWidth = math.max(0.0, constraints.maxWidth - scrollbarChannelWidth);
+
+                final crossAxisCount = availableWidth >= 620
                     ? 3
-                    : (constraints.maxWidth >= 360 ? 2 : 1);
-                final itemWidth = ((constraints.maxWidth - (crossAxisCount - 1) * 12) / crossAxisCount).floorToDouble();
+                    : (availableWidth >= 340 ? 2 : 1);
+                final itemWidth = ((availableWidth - (crossAxisCount - 1) * 12) / crossAxisCount).floorToDouble();
 
                 if (displayItems.isEmpty) {
                   return const Center(
@@ -136,18 +162,42 @@ class DetailedCropsCarousel extends StatelessWidget {
                   );
                 }
 
-                return Scrollbar(
-                  thumbVisibility: true,
-                  child: SingleChildScrollView(
-                    child: Wrap(
-                      spacing: 12,
-                      runSpacing: 12,
-                      children: displayItems.map((item) {
-                        return SizedBox(
-                          width: itemWidth,
-                          child: _buildCropCard(item),
-                        );
-                      }).toList(),
+                return ScrollbarTheme(
+                  data: ScrollbarThemeData(
+                    thumbVisibility: const WidgetStatePropertyAll(true),
+                    trackVisibility: const WidgetStatePropertyAll(true),
+                    thickness: const WidgetStatePropertyAll(8.0),
+                    radius: const Radius.circular(4),
+                    thumbColor: WidgetStateProperty.resolveWith((states) {
+                      if (states.contains(WidgetState.dragged)) {
+                        return const Color(0xFF1E293B);
+                      }
+                      if (states.contains(WidgetState.hovered)) {
+                        return const Color(0xFF334155);
+                      }
+                      return const Color(0xFF64748B); // Distinct, sharp slate-grey thumb!
+                    }),
+                    trackColor: const WidgetStatePropertyAll(Color(0xFFF1F5F9)),
+                    trackBorderColor: const WidgetStatePropertyAll(Color(0xFFE2E8F0)),
+                  ),
+                  child: Scrollbar(
+                    controller: _scrollController,
+                    thumbVisibility: true,
+                    trackVisibility: true,
+                    interactive: true,
+                    child: SingleChildScrollView(
+                      controller: _scrollController,
+                      padding: const EdgeInsets.only(right: 14, bottom: 12),
+                      child: Wrap(
+                        spacing: 12,
+                        runSpacing: 12,
+                        children: displayItems.map((item) {
+                          return SizedBox(
+                            width: itemWidth,
+                            child: _buildCropCard(item),
+                          );
+                        }).toList(),
+                      ),
                     ),
                   ),
                 );
@@ -162,12 +212,12 @@ class DetailedCropsCarousel extends StatelessWidget {
   Widget _buildCropCard(Map<String, dynamic> item) {
     final String label = item['label'];
     final ComponentDetection det = item['det'];
-    final String itemImagePath = item['imagePath'] ?? image.imagePath;
+    final String itemImagePath = item['imagePath'] ?? widget.image.imagePath;
     final bool isDefect = item['isDefect'] ?? det.isDefect;
-    final isSelected = selectedDetection?.detectionId == det.detectionId;
+    final isSelected = widget.selectedDetection?.detectionId == det.detectionId;
 
     return InkWell(
-      onTap: () => onSelectDetection?.call(det),
+      onTap: () => widget.onSelectDetection?.call(det),
       borderRadius: BorderRadius.circular(8),
       child: Container(
         padding: const EdgeInsets.all(4),

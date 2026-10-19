@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'config/app_theme.dart';
 import 'screens/inspection_screen.dart';
+import 'services/app_state.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -12,11 +14,15 @@ class TowerLensApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'TowerLens',
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme,
-      home: const InspectionScreen(),
+    // Provide AppState across the whole app for session and screen state persistence
+    return ChangeNotifierProvider(
+      create: (_) => AppState()..loadSavedSession(),
+      child: MaterialApp(
+        title: 'TowerLens',
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.lightTheme,
+        home: const InspectionScreen(),
+      ),
     );
   }
 }

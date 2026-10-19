@@ -174,11 +174,6 @@ class _LoginScreenState extends State<LoginScreen> {
                         }
                       },
                       decoration: InputDecoration(
-                        hintText: 'e.g. test_user',
-                        hintStyle: const TextStyle(
-                          color: Color(0xFF94A3B8),
-                          fontSize: 14,
-                        ),
                         contentPadding: const EdgeInsets.symmetric(
                           horizontal: 14,
                           vertical: 14,
@@ -234,12 +229,6 @@ class _LoginScreenState extends State<LoginScreen> {
                         }
                       },
                       decoration: InputDecoration(
-                        hintText: '••••••••',
-                        hintStyle: const TextStyle(
-                          color: Color(0xFF94A3B8),
-                          fontSize: 16,
-                          letterSpacing: 2.0,
-                        ),
                         contentPadding: const EdgeInsets.symmetric(
                           horizontal: 14,
                           vertical: 14,
