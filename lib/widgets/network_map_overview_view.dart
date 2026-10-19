@@ -1126,7 +1126,7 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
                 urlTemplate: _isSatellite
                     ? 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
                     : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                userAgentPackageName: 'com.knogrid.towerlens',
+                userAgentPackageName: 'com.towerlens.app',
                 maxZoom: 19,
               ),
               if (_isGridActive && polygons.isNotEmpty)

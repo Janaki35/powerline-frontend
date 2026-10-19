@@ -4,19 +4,22 @@ import 'screens/inspection_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(const KnoGridApp());
+  runApp(const TowerLensApp());
 }
 
-class KnoGridApp extends StatelessWidget {
-  const KnoGridApp({super.key});
+class TowerLensApp extends StatelessWidget {
+  const TowerLensApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'KnoGrid — Transmission Infrastructure Intelligence',
+      title: 'TowerLens',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       home: const InspectionScreen(),
     );
   }
 }
+
+/// Backwards compatibility alias
+typedef KnoGridApp = TowerLensApp;

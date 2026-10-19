@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 
-/// Configuration for KnoGrid application.
+/// Configuration for TowerLens application.
 /// Allows setting local data paths and server URLs easily.
 class AppConfig {
   /// Base local directory where RAW inspection data resides on Windows
