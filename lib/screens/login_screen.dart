@@ -396,7 +396,7 @@ class _MapRealisticBackgroundPainter extends CustomPainter {
     );
 
     // 3. Roads
-    // Main orange highway running horizontally
+    // Main orange highway running horizontally in json
     final roadCasingPaint = Paint()
       ..color = const Color(0xFFE0BA88)
       ..strokeWidth = 10.0

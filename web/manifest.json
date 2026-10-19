@@ -1,6 +1,6 @@
 {
-    "name": "flutter_proj",
-    "short_name": "flutter_proj",
+    "name": "TowerLens",
+    "short_name": "TowerLens",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

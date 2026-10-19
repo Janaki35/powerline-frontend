@@ -70,7 +70,7 @@ class AppHeader extends StatelessWidget implements PreferredSizeWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      'KnoGrid',
+                      'TowerLens',
                       style: TextStyle(
                         color: AppColors.textPrimary,
                         fontSize: 16,
@@ -80,7 +80,7 @@ class AppHeader extends StatelessWidget implements PreferredSizeWidget {
                     ),
                     if (!isMobile)
                       const Text(
-                        'TowerLens Intelligence',
+                        'Transmission Intelligence',
                         style: TextStyle(
                           color: AppColors.textMuted,
                           fontSize: 10,
