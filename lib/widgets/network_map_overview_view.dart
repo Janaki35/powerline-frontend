@@ -1246,12 +1246,9 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
                 key: ValueKey(_isSatellite ? 'satellite' : 'streets'),
                 urlTemplate: _isSatellite
                     ? 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
-                    : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
-                fallbackUrl: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-                subdomains: const ['a', 'b', 'c', 'd'],
+                    : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                 userAgentPackageName: 'com.towerlens.app',
                 maxZoom: 19,
-                panBuffer: 1,
               ),
               if (_isGridActive && polygons.isNotEmpty)
                 PolygonLayer(polygons: polygons),
@@ -4367,15 +4364,12 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
                   ),
                 ),
                 const SizedBox(width: 6),
-                Flexible(
-                  child: Text(
-                    route.calloutLabel.isNotEmpty ? route.calloutLabel : route.name,
-                    style: const TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF1E293B),
-                    ),
-                    overflow: TextOverflow.ellipsis,
+                Text(
+                  route.calloutLabel.isNotEmpty ? route.calloutLabel : route.name,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1E293B),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -4594,16 +4588,13 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
                     ),
                   ],
                 ),
-                child: Flexible(
-                  child: Text(
-                    displayName,
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      color: isSelected ? const Color(0xFF7631EC) : const Color(0xFF1E293B),
-                      letterSpacing: -0.1,
-                    ),
-                    overflow: TextOverflow.ellipsis,
+                child: Text(
+                  displayName,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: isSelected ? const Color(0xFF7631EC) : const Color(0xFF1E293B),
+                    letterSpacing: -0.1,
                   ),
                 ),
               ),
