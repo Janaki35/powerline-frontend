@@ -1246,9 +1246,12 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
                 key: ValueKey(_isSatellite ? 'satellite' : 'streets'),
                 urlTemplate: _isSatellite
                     ? 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
-                    : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                    : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
+                fallbackUrl: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                subdomains: const ['a', 'b', 'c', 'd'],
                 userAgentPackageName: 'com.towerlens.app',
                 maxZoom: 19,
+                panBuffer: 1,
               ),
               if (_isGridActive && polygons.isNotEmpty)
                 PolygonLayer(polygons: polygons),
