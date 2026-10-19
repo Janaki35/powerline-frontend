@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../config/app_theme.dart';
 import '../models/inspection_model.dart';
+import '../services/app_state.dart';
 import '../services/data_service.dart';
 import '../widgets/asset_navigator_panel.dart';
 import '../widgets/tower_structure_panel.dart';
@@ -8,12 +10,6 @@ import '../widgets/phase_inspection_view.dart';
 import '../widgets/network_map_overview_view.dart';
 import '../widgets/transmission_tower_icon.dart';
 import 'login_screen.dart';
-
-enum AppView {
-  signIn,
-  networkMap,
-  inspection,
-}
 
 class InspectionScreen extends StatefulWidget {
   const InspectionScreen({super.key});
@@ -30,9 +26,6 @@ class _InspectionScreenState extends State<InspectionScreen> {
   bool _isLoading = true;
   String? _errorMessage;
 
-  // Navigation flow starting at Sign In as the 1st page
-  AppView _currentView = AppView.signIn;
-
   @override
   void initState() {
     super.initState();
@@ -44,10 +37,6 @@ class _InspectionScreenState extends State<InspectionScreen> {
       final data = await DataService.loadInspectionData();
       setState(() {
         _inspectionData = data;
-        // Initially unselected matching Penpot Screenshot 1
-        _selectedAssetType = null;
-        _selectedCircuit = null;
-        _selectedPhase = null;
         _isLoading = false;
       });
     } catch (e) {
@@ -60,7 +49,11 @@ class _InspectionScreenState extends State<InspectionScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
+    // 1. Listen to global AppState (manages user session and active screen)
+    final appState = Provider.of<AppState>(context);
+
+    // Initial Loading State: waits for data and stored session in browser
+    if (!appState.isInitialized || _isLoading) {
       return Scaffold(
         backgroundColor: const Color(0xFFF7F5EE),
         body: Center(
@@ -123,33 +116,48 @@ class _InspectionScreenState extends State<InspectionScreen> {
 
     final tower = _inspectionData!.tower;
 
+    // Restore saved circuit & phase if website was refreshed while on the 2nd page
+    if (_selectedCircuit == null && appState.selectedCircuitId != null) {
+      final match = tower.circuits
+          .where((c) => c.circuitId == appState.selectedCircuitId);
+      if (match.isNotEmpty) {
+        _selectedAssetType = 'Circuit';
+        _selectedCircuit = match.first;
+        if (appState.selectedPhaseName != null) {
+          _selectedPhase = _selectedCircuit?.phases[appState.selectedPhaseName!];
+        }
+      }
+    }
+
     // 1. SCREEN 1: SIGN IN (Penpot: 1.png)
-    if (_currentView == AppView.signIn) {
+    if (appState.currentView == AppView.signIn) {
       return LoginScreen(
-        onLoginSuccess: () {
-          setState(() {
-            _currentView = AppView.networkMap;
-          });
-        },
+        onLoginSuccess: () => appState.login(),
       );
     }
 
     // 2. SCREEN 2: NETWORK MAP (Penpot: 2.png / 2_sidebar.png / 2_tableview.png)
-    if (_currentView == AppView.networkMap) {
+    if (appState.currentView == AppView.networkMap) {
       return NetworkMapOverviewView(
         tower: tower,
-        onLogout: () {
-          setState(() {
-            _currentView = AppView.signIn;
-          });
-        },
-        onOpenInspection: (c, p) {
+        initialDate: appState.selectedDate,
+        initialVoltage: appState.selectedVoltage,
+        initialTowerId: appState.selectedTowerId,
+        onDateChanged: (d) => appState.setSelectedDate(d),
+        onVoltageChanged: (v) => appState.setSelectedVoltage(v),
+        onTowerChanged: (t) => appState.setSelectedTowerId(t),
+        onLogout: () => appState.logout(),
+        onOpenInspection: (c, p, [towerId]) {
           setState(() {
             _selectedAssetType = c != null ? 'Circuit' : null;
             _selectedCircuit = c;
             _selectedPhase = p;
-            _currentView = AppView.inspection;
           });
+          appState.navigateToInspection(
+            towerId: towerId,
+            circuitId: c?.circuitId,
+            phaseName: p?.phaseName,
+          );
         },
       );
     }
@@ -180,7 +188,8 @@ class _InspectionScreenState extends State<InspectionScreen> {
                     children: [
                       InkWell(
                         onTap: () {
-                          setState(() => _currentView = AppView.networkMap);
+                          // Return to Page 1 (Network Map)
+                          appState.navigateToMap();
                         },
                         borderRadius: BorderRadius.circular(6),
                         child: Row(
@@ -212,7 +221,8 @@ class _InspectionScreenState extends State<InspectionScreen> {
                       const Spacer(),
                       InkWell(
                         onTap: () {
-                          setState(() => _currentView = AppView.signIn);
+                          // Clear stored session and logout to Sign In screen
+                          appState.logout();
                         },
                         borderRadius: BorderRadius.circular(6),
                         child: Container(
@@ -266,14 +276,24 @@ class _InspectionScreenState extends State<InspectionScreen> {
                             _selectedCircuit = c;
                             _selectedPhase = null;
                           });
+                          // Save selection to AppState for browser refresh persistence
+                          appState.navigateToInspection(
+                            circuitId: c.circuitId,
+                            phaseName: null,
+                          );
                         },
                         onSelectPhase: (p) {
                           setState(() {
                             _selectedPhase = p;
                           });
+                          // Save selection to AppState for browser refresh persistence
+                          appState.navigateToInspection(
+                            circuitId: _selectedCircuit?.circuitId,
+                            phaseName: p.phaseName,
+                          );
                         },
                         onBackToMap: () {
-                          setState(() => _currentView = AppView.networkMap);
+                          appState.navigateToMap();
                         },
                       ),
 
@@ -289,12 +309,22 @@ class _InspectionScreenState extends State<InspectionScreen> {
                             _selectedCircuit = c;
                             _selectedPhase = null;
                           });
+                          // Save selection to AppState for browser refresh persistence
+                          appState.navigateToInspection(
+                            circuitId: c.circuitId,
+                            phaseName: null,
+                          );
                         },
                         onSelectPhase: (p) {
                           setState(() {
                             _selectedAssetType = 'Circuit';
                             _selectedPhase = p;
                           });
+                          // Save selection to AppState for browser refresh persistence
+                          appState.navigateToInspection(
+                            circuitId: _selectedCircuit?.circuitId,
+                            phaseName: p.phaseName,
+                          );
                         },
                       ),
 
@@ -324,7 +354,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
                 leading: IconButton(
                   icon: const Icon(Icons.arrow_back, color: Color(0xFF0F172A)),
                   tooltip: 'Back to Network Map',
-                  onPressed: () => setState(() => _currentView = AppView.networkMap),
+                  onPressed: () => appState.navigateToMap(),
                 ),
                 title: Row(
                   children: [
@@ -357,7 +387,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
                   IconButton(
                     icon: const Icon(Icons.logout, size: 20, color: Color(0xFF475569)),
                     tooltip: 'Log out',
-                    onPressed: () => setState(() => _currentView = AppView.signIn),
+                    onPressed: () => appState.logout(),
                   ),
                 ],
                 bottom: const TabBar(
@@ -387,12 +417,24 @@ class _InspectionScreenState extends State<InspectionScreen> {
                         _selectedPhase = null;
                       });
                     },
-                    onSelectCircuit: (c) => setState(() {
-                      _selectedCircuit = c;
-                      _selectedPhase = null;
-                    }),
-                    onSelectPhase: (p) => setState(() => _selectedPhase = p),
-                    onBackToMap: () => setState(() => _currentView = AppView.networkMap),
+                    onSelectCircuit: (c) {
+                      setState(() {
+                        _selectedCircuit = c;
+                        _selectedPhase = null;
+                      });
+                      appState.navigateToInspection(
+                        circuitId: c.circuitId,
+                        phaseName: null,
+                      );
+                    },
+                    onSelectPhase: (p) {
+                      setState(() => _selectedPhase = p);
+                      appState.navigateToInspection(
+                        circuitId: _selectedCircuit?.circuitId,
+                        phaseName: p.phaseName,
+                      );
+                    },
+                    onBackToMap: () => appState.navigateToMap(),
                   ),
                   TowerStructurePanel(
                     width: double.infinity,
@@ -405,12 +447,20 @@ class _InspectionScreenState extends State<InspectionScreen> {
                         _selectedCircuit = c;
                         _selectedPhase = null;
                       });
+                      appState.navigateToInspection(
+                        circuitId: c.circuitId,
+                        phaseName: null,
+                      );
                     },
                     onSelectPhase: (p) {
                       setState(() {
                         _selectedAssetType = 'Circuit';
                         _selectedPhase = p;
                       });
+                      appState.navigateToInspection(
+                        circuitId: _selectedCircuit?.circuitId,
+                        phaseName: p.phaseName,
+                      );
                     },
                   ),
                   PhaseInspectionView(

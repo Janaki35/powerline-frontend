@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../config/app_theme.dart';
 import '../models/inspection_model.dart';
@@ -25,6 +26,8 @@ class _PhaseInspectionViewState extends State<PhaseInspectionView> {
   ComponentDetection? _selectedDetection;
   final bool _showDetections = true;
   final TransformationController _transformController = TransformationController();
+  double _cropsFraction = 0.45;
+  bool _isDraggingDivider = false;
 
   @override
   void initState() {
@@ -229,153 +232,250 @@ class _PhaseInspectionViewState extends State<PhaseInspectionView> {
             ),
           ),
 
-          // Main Drone Image Card Area with increased width per user request
+          // Middle & Bottom Area with Draggable Divider
           Expanded(
-            flex: 6,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: Column(
-                children: [
-                  Expanded(
-                    child: Stack(
-                      children: [
-                        // Centered Drone Image with wider aspect ratio
-                        Center(
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(12),
-                            child: AspectRatio(
-                              aspectRatio: 16 / 10,
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final totalH = constraints.maxHeight;
+                const dividerH = 20.0;
+                final availableH = math.max(100.0, totalH - dividerH);
+
+                // Fraction clamped between 0.18 (minimum down drag) and 0.80 (80% maximum up drag)
+                final clampedFraction = _cropsFraction.clamp(0.18, 0.80);
+                final cropsH = availableH * clampedFraction;
+                final topH = availableH - cropsH;
+
+                return Column(
+                  children: [
+                    // Main Drone Image Card Area
+                    SizedBox(
+                      height: topH,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        child: Column(
+                          children: [
+                            Expanded(
                               child: Stack(
-                                fit: StackFit.expand,
                                 children: [
-                                  // Base Image
-                                  ImageService.buildImage(
-                                    imagePath: currentImage.imagePath,
-                                    fit: BoxFit.contain,
+                                  // Centered Drone Image with wider aspect ratio
+                                  Center(
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(12),
+                                      child: AspectRatio(
+                                        aspectRatio: 16 / 10,
+                                        child: Stack(
+                                          fit: StackFit.expand,
+                                          children: [
+                                            // Base Image
+                                            ImageService.buildImage(
+                                              imagePath: currentImage.imagePath,
+                                              fit: BoxFit.contain,
+                                            ),
+                                            // Bounding Boxes Overlay
+                                            DetectionCanvas(
+                                              image: currentImage,
+                                              selectedDetection: _selectedDetection,
+                                              showDetections: _showDetections,
+                                              onDetectionTap: (det) {
+                                                setState(() => _selectedDetection = det);
+                                              },
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
                                   ),
-                                  // Bounding Boxes Overlay
-                                  DetectionCanvas(
-                                    image: currentImage,
-                                    selectedDetection: _selectedDetection,
-                                    showDetections: _showDetections,
-                                    onDetectionTap: (det) {
-                                      setState(() => _selectedDetection = det);
-                                    },
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
 
-                        // Left Arrow Button (<)
-                        Positioned(
-                          left: 4,
-                          top: 0,
-                          bottom: 0,
-                          child: Center(
-                            child: Container(
-                              width: 36,
-                              height: 36,
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: const Color(0xFFE2E8F0)),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.12),
-                                    blurRadius: 8,
-                                    offset: const Offset(0, 2),
+                                  // Left Arrow Button (<)
+                                  Positioned(
+                                    left: 4,
+                                    top: 0,
+                                    bottom: 0,
+                                    child: Center(
+                                      child: Container(
+                                        width: 36,
+                                        height: 36,
+                                        decoration: BoxDecoration(
+                                          color: Colors.white,
+                                          borderRadius: BorderRadius.circular(8),
+                                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Colors.black.withValues(alpha: 0.12),
+                                              blurRadius: 8,
+                                              offset: const Offset(0, 2),
+                                            ),
+                                          ],
+                                        ),
+                                        child: IconButton(
+                                          icon: const Icon(Icons.chevron_left, size: 20, color: Color(0xFF1E293B)),
+                                          onPressed: _currentImageIndex > 0 ? _previousImage : null,
+                                          padding: EdgeInsets.zero,
+                                        ),
+                                      ),
+                                    ),
                                   ),
-                                ],
-                              ),
-                              child: IconButton(
-                                icon: const Icon(Icons.chevron_left, size: 20, color: Color(0xFF1E293B)),
-                                onPressed: _currentImageIndex > 0 ? _previousImage : null,
-                                padding: EdgeInsets.zero,
-                              ),
-                            ),
-                          ),
-                        ),
 
-                        // Right Arrow Button (>)
-                        Positioned(
-                          right: 4,
-                          top: 0,
-                          bottom: 0,
-                          child: Center(
-                            child: Container(
-                              width: 36,
-                              height: 36,
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: const Color(0xFFE2E8F0)),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.12),
-                                    blurRadius: 8,
-                                    offset: const Offset(0, 2),
+                                  // Right Arrow Button (>)
+                                  Positioned(
+                                    right: 4,
+                                    top: 0,
+                                    bottom: 0,
+                                    child: Center(
+                                      child: Container(
+                                        width: 36,
+                                        height: 36,
+                                        decoration: BoxDecoration(
+                                          color: Colors.white,
+                                          borderRadius: BorderRadius.circular(8),
+                                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Colors.black.withValues(alpha: 0.12),
+                                              blurRadius: 8,
+                                              offset: const Offset(0, 2),
+                                            ),
+                                          ],
+                                        ),
+                                        child: IconButton(
+                                          icon: const Icon(Icons.chevron_right, size: 20, color: Color(0xFF1E293B)),
+                                          onPressed: _currentImageIndex < phase.images.length - 1
+                                              ? _nextImage
+                                              : null,
+                                          padding: EdgeInsets.zero,
+                                        ),
+                                      ),
+                                    ),
                                   ),
                                 ],
                               ),
-                              child: IconButton(
-                                icon: const Icon(Icons.chevron_right, size: 20, color: Color(0xFF1E293B)),
-                                onPressed: _currentImageIndex < phase.images.length - 1
-                                    ? _nextImage
-                                    : null,
-                                padding: EdgeInsets.zero,
+                            ),
+
+                            // Image Telemetry Caption & Findings matching the PDF report
+                            Padding(
+                              padding: const EdgeInsets.only(top: 6, bottom: 4),
+                              child: Text(
+                                [
+                                  currentImage.filename,
+                                  if (currentImage.telemetry?.capturedAt.isNotEmpty ?? false)
+                                    currentImage.telemetry!.capturedAt.replaceAll('T', ' '),
+                                  if (currentImage.distanceToTowerM > 0)
+                                    '${currentImage.distanceToTowerM.toStringAsFixed(1)} m from tower',
+                                ].join(' · '),
+                                style: const TextStyle(
+                                  fontSize: 11.5,
+                                  color: Color(0xFF475569),
+                                  fontFamily: 'monospace',
+                                ),
+                                textAlign: TextAlign.center,
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
-                          ),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
-                  ),
 
-                  // Image Telemetry Caption & Findings matching the PDF report
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8, bottom: 6),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          [
-                            currentImage.filename,
-                            if (currentImage.telemetry?.capturedAt.isNotEmpty ?? false)
-                              currentImage.telemetry!.capturedAt.replaceAll('T', ' '),
-                            if (currentImage.distanceToTowerM > 0)
-                              '${currentImage.distanceToTowerM.toStringAsFixed(1)} m from tower',
-                          ].join(' · '),
-                          style: const TextStyle(
-                            fontSize: 11.5,
-                            color: Color(0xFF475569),
-                            fontFamily: 'monospace',
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
+                    // Draggable Divider Bar with Grip Handle
+                    _buildDraggableDivider(availableH),
 
-                      ],
+                    // Bottom Detailed Crops Section
+                    SizedBox(
+                      height: cropsH,
+                      child: DetailedCropsCarousel(
+                        image: currentImage,
+                        phase: phase,
+                        selectedDetection: _selectedDetection,
+                        onSelectDetection: (det) {
+                          setState(() => _selectedDetection = det);
+                        },
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          // Bottom Detailed Crops Section (3x2 Grid with increased card sizes)
-          Expanded(
-            flex: 5,
-            child: DetailedCropsCarousel(
-              image: currentImage,
-              phase: phase,
-              selectedDetection: _selectedDetection,
-              onSelectDetection: (det) {
-                setState(() => _selectedDetection = det);
+                  ],
+                );
               },
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildDraggableDivider(double availableH) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.resizeUpDown,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onVerticalDragStart: (_) => setState(() => _isDraggingDivider = true),
+        onVerticalDragEnd: (_) => setState(() => _isDraggingDivider = false),
+        onVerticalDragCancel: () => setState(() => _isDraggingDivider = false),
+        onDoubleTap: () {
+          // Double-click toggle between expanded (80%) and default (45%)
+          setState(() {
+            _cropsFraction = _cropsFraction > 0.60 ? 0.45 : 0.80;
+          });
+        },
+        onVerticalDragUpdate: (details) {
+          if (availableH <= 0) return;
+          final deltaFraction = details.delta.dy / availableH;
+          setState(() {
+            _cropsFraction = (_cropsFraction - deltaFraction).clamp(0.18, 0.80);
+          });
+        },
+        child: SizedBox(
+          height: 20,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              // Horizontal divider line
+              const Positioned(
+                left: 0,
+                right: 0,
+                child: Divider(
+                  height: 1,
+                  thickness: 1,
+                  color: Color(0xFFE2E8F0),
+                ),
+              ),
+
+              // Grip Pill Handle in the middle
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 150),
+                width: _isDraggingDivider ? 56 : 48,
+                height: _isDraggingDivider ? 7 : 5,
+                decoration: BoxDecoration(
+                  color: _isDraggingDivider
+                      ? const Color(0xFF1967D2)
+                      : const Color(0xFF94A3B8),
+                  borderRadius: BorderRadius.circular(3.5),
+                  boxShadow: [
+                    BoxShadow(
+                      color: (_isDraggingDivider ? const Color(0xFF1967D2) : Colors.black)
+                          .withValues(alpha: _isDraggingDivider ? 0.35 : 0.12),
+                      blurRadius: 4,
+                      offset: const Offset(0, 1),
+                    ),
+                  ],
+                ),
+                child: Center(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 14,
+                        height: 1.5,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.85),
+                          borderRadius: BorderRadius.circular(1),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
