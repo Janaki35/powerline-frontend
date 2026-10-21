@@ -631,10 +631,14 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
       _mapController.move(_currentCenter, _currentZoom);
     } catch (_) {}
 
-    widget.onDateChanged?.call(_selectedDate);
-    widget.onVoltageChanged?.call(_selectedVoltage);
-    widget.onTowerChanged?.call(_selectedTower.id);
-    widget.onCorridorChanged?.call(_selectedCorridorTop, _selectedCorridorBottom);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        widget.onDateChanged?.call(_selectedDate);
+        widget.onVoltageChanged?.call(_selectedVoltage);
+        widget.onTowerChanged?.call(_selectedTower.id);
+        widget.onCorridorChanged?.call(_selectedCorridorTop, _selectedCorridorBottom);
+      }
+    });
   }
 
   void _syncTowerStatus() {
@@ -673,7 +677,8 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
   }
 
   void _zoomIn() {
-    final nextZoom = (_currentZoom + 1.0).clamp(4.0, 19.0);
+    final maxZ = _isSatellite ? 18.0 : 19.0;
+    final nextZoom = (_currentZoom + 1.0).clamp(4.0, maxZ);
     _mapController.move(_currentCenter, nextZoom);
   }
 
@@ -1469,7 +1474,7 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
               initialZoom: _currentZoom,
               initialRotation: _currentRotation,
               minZoom: 4.0,
-              maxZoom: 19.0,
+              maxZoom: _isSatellite ? 18.0 : 19.0,
               onTap: (tapPosition, point) {
                 if (_showCalendarDropdown ||
                     _showVoltageDropdown ||
@@ -1522,7 +1527,8 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
                     ? 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
                     : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                 userAgentPackageName: 'com.towerlens.app',
-                maxZoom: 19,
+                maxZoom: _isSatellite ? 18 : 19,
+                maxNativeZoom: _isSatellite ? 18 : 19,
               ),
               if (_isGridActive && polygons.isNotEmpty)
                 PolygonLayer(polygons: polygons),
@@ -1910,6 +1916,10 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
                     setState(() {
                       _isSatellite = true;
                       _showBaseMapPopover = false;
+                      if (_currentZoom > 18.0) {
+                        _currentZoom = 18.0;
+                        _mapController.move(_currentCenter, 18.0);
+                      }
                     });
                   },
                   borderRadius: BorderRadius.circular(8),

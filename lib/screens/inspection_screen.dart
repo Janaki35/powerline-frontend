@@ -111,8 +111,39 @@ class _InspectionScreenState extends State<InspectionScreen> {
       });
     }
 
-    // Initial Loading State: waits for data and stored session in browser
-    if (!appState.isInitialized || _isLoading) {
+    // Initial Loading State: waits for stored session in browser to initialize
+    if (!appState.isInitialized) {
+      return Scaffold(
+        backgroundColor: const Color(0xFFF7F5EE),
+        body: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: const [
+              CircularProgressIndicator(color: AppColors.primaryBlue),
+              SizedBox(height: 16),
+              Text(
+                'Loading TowerLens Intelligence...',
+                style: TextStyle(
+                  color: AppColors.textPrimary,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // 1. SCREEN 1: SIGN IN (Penpot: 1.png) - Checked first so logout returns immediately
+    if (appState.currentView == AppView.signIn) {
+      return LoginScreen(
+        onLoginSuccess: () => appState.login(),
+      );
+    }
+
+    // Inspection Data Loading State
+    if (_isLoading) {
       return Scaffold(
         backgroundColor: const Color(0xFFF7F5EE),
         body: Center(
@@ -182,13 +213,6 @@ class _InspectionScreenState extends State<InspectionScreen> {
           _selectedPhase = _selectedCircuit?.phases[appState.selectedPhaseName!];
         }
       }
-    }
-
-    // 1. SCREEN 1: SIGN IN (Penpot: 1.png)
-    if (appState.currentView == AppView.signIn) {
-      return LoginScreen(
-        onLoginSuccess: () => appState.login(),
-      );
     }
 
     // 2. SCREEN 2: NETWORK MAP (Penpot: 2.png / 2_sidebar.png / 2_tableview.png)
