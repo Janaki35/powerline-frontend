@@ -198,12 +198,12 @@ class _PhaseInspectionViewState extends State<PhaseInspectionView> {
                   ),
                 ),
                 const SizedBox(width: 10),
-                // Phase badge with phase color (Red for R, Amber for Y, Blue for B)
+                // Phase badge with phase color (Red for R, Yellow for Y, Blue for B)
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
                   decoration: BoxDecoration(
                     color: phase.phaseName == 'Y'
-                        ? const Color(0xFFD97706)
+                        ? const Color(0xFFEAB308)
                         : phase.phaseName == 'B'
                             ? const Color(0xFF2563EB)
                             : const Color(0xFFDB322E),

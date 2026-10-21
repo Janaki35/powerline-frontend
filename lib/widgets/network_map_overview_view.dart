@@ -3524,57 +3524,17 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
                 decoration: BoxDecoration(
                   color: tower.isCritical
                       ? const Color(0xFFFEE2E2)
-                      : (isInspected ? const Color(0xFFDCFCE7) : const Color(0xFFF1F5F9)),
+                      : const Color(0xFFF1F5F9),
                   borderRadius: BorderRadius.circular(4),
                 ),
-                child: tower.isCritical
-                    ? Text(
-                        '${tower.defectCount} Critical',
-                        style: const TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFFDC2626),
-                        ),
-                      )
-                    : (isInspected
-                        ? RichText(
-                            text: const TextSpan(
-                              children: [
-                                TextSpan(
-                                  text: '0 Critical',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w600,
-                                    color: Color(0xFF64748B),
-                                  ),
-                                ),
-                                TextSpan(
-                                  text: ' · ',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w600,
-                                    color: Color(0xFF64748B),
-                                  ),
-                                ),
-                                TextSpan(
-                                  text: 'Normal',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.bold,
-                                    color: Color(0xFF166534),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          )
-                        : const Text(
-                            '0 Critical',
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF64748B),
-                            ),
-                          )),
+                child: Text(
+                  tower.isCritical ? '${tower.defectCount} Critical' : '0 Critical',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: tower.isCritical ? FontWeight.bold : FontWeight.w600,
+                    color: tower.isCritical ? const Color(0xFFDC2626) : const Color(0xFF64748B),
+                  ),
+                ),
               ),
               const SizedBox(width: 6),
               Container(
