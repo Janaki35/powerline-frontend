@@ -631,10 +631,14 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
       _mapController.move(_currentCenter, _currentZoom);
     } catch (_) {}
 
-    widget.onDateChanged?.call(_selectedDate);
-    widget.onVoltageChanged?.call(_selectedVoltage);
-    widget.onTowerChanged?.call(_selectedTower.id);
-    widget.onCorridorChanged?.call(_selectedCorridorTop, _selectedCorridorBottom);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        widget.onDateChanged?.call(_selectedDate);
+        widget.onVoltageChanged?.call(_selectedVoltage);
+        widget.onTowerChanged?.call(_selectedTower.id);
+        widget.onCorridorChanged?.call(_selectedCorridorTop, _selectedCorridorBottom);
+      }
+    });
   }
 
   void _syncTowerStatus() {
@@ -673,7 +677,8 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
   }
 
   void _zoomIn() {
-    final nextZoom = (_currentZoom + 1.0).clamp(4.0, 19.0);
+    final maxZ = _isSatellite ? 18.0 : 19.0;
+    final nextZoom = (_currentZoom + 1.0).clamp(4.0, maxZ);
     _mapController.move(_currentCenter, nextZoom);
   }
 
@@ -1469,7 +1474,7 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
               initialZoom: _currentZoom,
               initialRotation: _currentRotation,
               minZoom: 4.0,
-              maxZoom: 19.0,
+              maxZoom: _isSatellite ? 18.0 : 19.0,
               onTap: (tapPosition, point) {
                 if (_showCalendarDropdown ||
                     _showVoltageDropdown ||
@@ -1522,7 +1527,8 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
                     ? 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
                     : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                 userAgentPackageName: 'com.towerlens.app',
-                maxZoom: 19,
+                maxZoom: _isSatellite ? 18 : 19,
+                maxNativeZoom: _isSatellite ? 18 : 19,
               ),
               if (_isGridActive && polygons.isNotEmpty)
                 PolygonLayer(polygons: polygons),
@@ -1910,6 +1916,10 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
                     setState(() {
                       _isSatellite = true;
                       _showBaseMapPopover = false;
+                      if (_currentZoom > 18.0) {
+                        _currentZoom = 18.0;
+                        _mapController.move(_currentCenter, 18.0);
+                      }
                     });
                   },
                   borderRadius: BorderRadius.circular(8),
@@ -3524,57 +3534,17 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
                 decoration: BoxDecoration(
                   color: tower.isCritical
                       ? const Color(0xFFFEE2E2)
-                      : (isInspected ? const Color(0xFFDCFCE7) : const Color(0xFFF1F5F9)),
+                      : const Color(0xFFF1F5F9),
                   borderRadius: BorderRadius.circular(4),
                 ),
-                child: tower.isCritical
-                    ? Text(
-                        '${tower.defectCount} Critical',
-                        style: const TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFFDC2626),
-                        ),
-                      )
-                    : (isInspected
-                        ? RichText(
-                            text: const TextSpan(
-                              children: [
-                                TextSpan(
-                                  text: '0 Critical',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w600,
-                                    color: Color(0xFF64748B),
-                                  ),
-                                ),
-                                TextSpan(
-                                  text: ' · ',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w600,
-                                    color: Color(0xFF64748B),
-                                  ),
-                                ),
-                                TextSpan(
-                                  text: 'Normal',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.bold,
-                                    color: Color(0xFF166534),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          )
-                        : const Text(
-                            '0 Critical',
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF64748B),
-                            ),
-                          )),
+                child: Text(
+                  tower.isCritical ? '${tower.defectCount} Critical' : '0 Critical',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: tower.isCritical ? FontWeight.bold : FontWeight.w600,
+                    color: tower.isCritical ? const Color(0xFFDC2626) : const Color(0xFF64748B),
+                  ),
+                ),
               ),
               const SizedBox(width: 6),
               Container(
