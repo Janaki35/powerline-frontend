@@ -9,9 +9,11 @@ import 'package:latlong2/latlong.dart' hide Path;
 import '../config/app_config.dart';
 import '../config/app_theme.dart';
 import '../models/inspection_model.dart';
+import '../services/data_service.dart';
 import '../services/image_service.dart';
 import '../services/grid_data_service.dart';
 import '../services/tower_corridor_service.dart';
+import '../services/tower_registry.dart';
 import 'transmission_tower_icon.dart';
 
 /// Lightweight representation of a Transmission Tower mapped from KML
@@ -29,6 +31,7 @@ class MapTower {
   final LatLng partnerLocation;
   final String segmentLabel;
   final bool isCritical;
+  final bool isInspected;
   final String surveyDate;
   final DateTime surveyDateTime;
   final int defectCount;
@@ -47,10 +50,18 @@ class MapTower {
     required this.partnerLocation,
     required this.segmentLabel,
     this.isCritical = false,
+    this.isInspected = false,
     required this.surveyDate,
     required this.surveyDateTime,
     this.defectCount = 0,
   });
+
+  bool get isNormal => isInspected && !isCritical;
+  String get conditionText {
+    if (!isInspected) return 'Not inspected';
+    if (isCritical) return 'Critical condition';
+    return 'Normal condition';
+  }
 }
 
 class NetworkMapOverviewView extends StatefulWidget {
@@ -60,9 +71,13 @@ class NetworkMapOverviewView extends StatefulWidget {
   final String? initialDate;
   final String? initialVoltage;
   final String? initialTowerId;
+  final String? initialCorridorTop;
+  final String? initialCorridorBottom;
   final ValueChanged<String>? onDateChanged;
   final ValueChanged<String>? onVoltageChanged;
   final ValueChanged<String>? onTowerChanged;
+  final void Function(String? top, String? bottom)? onCorridorChanged;
+  final bool returnFromInspection;
 
   const NetworkMapOverviewView({
     super.key,
@@ -72,9 +87,13 @@ class NetworkMapOverviewView extends StatefulWidget {
     this.initialDate,
     this.initialVoltage,
     this.initialTowerId,
+    this.initialCorridorTop,
+    this.initialCorridorBottom,
+    this.returnFromInspection = false,
     this.onDateChanged,
     this.onVoltageChanged,
     this.onTowerChanged,
+    this.onCorridorChanged,
   });
 
   @override
@@ -102,6 +121,7 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
       partnerLocation: const LatLng(20.822193, 85.268523),
       segmentLabel: '400 kV · Site A · 284 m',
       isCritical: false,
+      isInspected: false,
       surveyDate: '20 Apr 2026',
       surveyDateTime: DateTime(2026, 4, 20),
       defectCount: 0,
@@ -120,48 +140,13 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
       partnerLocation: const LatLng(20.824616, 85.267662),
       segmentLabel: '400 kV · Site A · 284 m',
       isCritical: false,
+      isInspected: false,
       surveyDate: '20 Apr 2026',
       surveyDateTime: DateTime(2026, 4, 20),
       defectCount: 0,
     ),
 
-    // 2. 16 Apr 2026 Survey: 220KV Line Site B (2 towers) & 135KV Line Site A (2 towers) (4 towers · 2_tableview.png)
-    MapTower(
-      id: 'T01-220KV-SB',
-      name: '220KV Tower 1 (Site B)',
-      voltage: '220 kV',
-      lineName: '220 kV line',
-      site: 'Site B',
-      towerNumber: 1,
-      location: const LatLng(20.835819, 85.258301),
-      altitude: 27.787,
-      spanToNext: '400 m to T02',
-      partnerTowerId: 'T02-220KV-SB',
-      partnerLocation: const LatLng(20.833486, 85.255370),
-      segmentLabel: '220 kV · Site B · 400 m',
-      isCritical: false,
-      surveyDate: '16 Apr 2026',
-      surveyDateTime: DateTime(2026, 4, 16),
-      defectCount: 0,
-    ),
-    MapTower(
-      id: 'T02-220KV-SB',
-      name: '220KV Tower 2 (Site B)',
-      voltage: '220 kV',
-      lineName: '220 kV line',
-      site: 'Site B',
-      towerNumber: 2,
-      location: const LatLng(20.833486, 85.255370),
-      altitude: 50.102,
-      spanToNext: '400 m to T01',
-      partnerTowerId: 'T01-220KV-SB',
-      partnerLocation: const LatLng(20.835819, 85.258301),
-      segmentLabel: '220 kV · Site B · 400 m',
-      isCritical: false,
-      surveyDate: '16 Apr 2026',
-      surveyDateTime: DateTime(2026, 4, 16),
-      defectCount: 0,
-    ),
+    // 2. 29 Mar 2026 Survey: 135KV Line Site A, 220KV Line Site A & Site B (6 inspected towers · 0 defects / Normal)
     MapTower(
       id: 'T01-135KV-SA',
       name: '135KV Tower 1',
@@ -169,15 +154,16 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
       lineName: '135 kV line',
       site: 'Site A',
       towerNumber: 1,
-      location: const LatLng(20.826015, 85.263880),
+      location: const LatLng(20.8258324, 85.2636364),
       altitude: 66.332,
       spanToNext: '330 m to T02',
       partnerTowerId: 'T02-135KV-SA',
-      partnerLocation: const LatLng(20.823362, 85.265309),
+      partnerLocation: const LatLng(20.8236093, 85.2655857),
       segmentLabel: '135 kV · 330 m',
       isCritical: false,
-      surveyDate: '16 Apr 2026',
-      surveyDateTime: DateTime(2026, 4, 16),
+      isInspected: true,
+      surveyDate: '29 Mar 2026',
+      surveyDateTime: DateTime(2026, 3, 29),
       defectCount: 0,
     ),
     MapTower(
@@ -187,15 +173,92 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
       lineName: '135 kV line',
       site: 'Site A',
       towerNumber: 2,
-      location: const LatLng(20.823362, 85.265309),
+      location: const LatLng(20.8236093, 85.2655857),
       altitude: 79.012,
       spanToNext: '330 m to T01',
       partnerTowerId: 'T01-135KV-SA',
-      partnerLocation: const LatLng(20.826015, 85.263880),
+      partnerLocation: const LatLng(20.8258324, 85.2636364),
       segmentLabel: '135 kV · 330 m',
       isCritical: false,
-      surveyDate: '16 Apr 2026',
-      surveyDateTime: DateTime(2026, 4, 16),
+      isInspected: true,
+      surveyDate: '29 Mar 2026',
+      surveyDateTime: DateTime(2026, 3, 29),
+      defectCount: 0,
+    ),
+    MapTower(
+      id: 'T01-220KV-SA',
+      name: '220KV Tower 1 (Site A)',
+      voltage: '220 kV',
+      lineName: '220 kV line',
+      site: 'Site A',
+      towerNumber: 1,
+      location: const LatLng(20.8047414, 85.2087025),
+      altitude: 42.254,
+      spanToNext: '363 m to T02',
+      partnerTowerId: 'T02-220KV-SA',
+      partnerLocation: const LatLng(20.801557, 85.2082728),
+      segmentLabel: '220 kV · Site A · 363 m',
+      isCritical: false,
+      isInspected: true,
+      surveyDate: '29 Mar 2026',
+      surveyDateTime: DateTime(2026, 3, 29),
+      defectCount: 0,
+    ),
+    MapTower(
+      id: 'T02-220KV-SA',
+      name: '220KV Tower 2 (Site A)',
+      voltage: '220 kV',
+      lineName: '220 kV line',
+      site: 'Site A',
+      towerNumber: 2,
+      location: const LatLng(20.801557, 85.2082728),
+      altitude: 53.802,
+      spanToNext: '363 m to T01',
+      partnerTowerId: 'T01-220KV-SA',
+      partnerLocation: const LatLng(20.8047414, 85.2087025),
+      segmentLabel: '220 kV · Site A · 363 m',
+      isCritical: false,
+      isInspected: true,
+      surveyDate: '29 Mar 2026',
+      surveyDateTime: DateTime(2026, 3, 29),
+      defectCount: 0,
+    ),
+    MapTower(
+      id: 'T01-220KV-SB',
+      name: '220KV Tower 1 (Site B)',
+      voltage: '220 kV',
+      lineName: '220 kV line',
+      site: 'Site B',
+      towerNumber: 1,
+      location: const LatLng(20.8359774, 85.258130),
+      altitude: 27.787,
+      spanToNext: '400 m to T02',
+      partnerTowerId: 'T02-220KV-SB',
+      partnerLocation: const LatLng(20.8333576, 85.2554527),
+      segmentLabel: '220 kV · Site B · 400 m',
+      isCritical: false,
+      isInspected: true,
+      surveyDate: '29 Mar 2026',
+      surveyDateTime: DateTime(2026, 3, 29),
+      defectCount: 0,
+    ),
+    MapTower(
+      id: 'T02-220KV-SB',
+      name: '220KV Tower 2 (Site B)',
+      voltage: '220 kV',
+      lineName: '220 kV line',
+      site: 'Site B',
+      towerNumber: 2,
+      location: const LatLng(20.8333576, 85.2554527),
+      altitude: 50.102,
+      spanToNext: '400 m to T01',
+      partnerTowerId: 'T01-220KV-SB',
+      partnerLocation: const LatLng(20.8359774, 85.258130),
+      segmentLabel: '220 kV · Site B · 400 m',
+      isCritical: false,
+      isInspected: true,
+      surveyDate: '29 Mar 2026',
+      surveyDateTime: DateTime(2026, 3, 29),
       defectCount: 0,
     ),
 
@@ -214,6 +277,7 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
       partnerLocation: const LatLng(20.802656, 85.288363),
       segmentLabel: '400 kV · Site B · 442 m',
       isCritical: true,
+      isInspected: true,
       surveyDate: '28 Mar 2026',
       surveyDateTime: DateTime(2026, 3, 28),
       defectCount: 9,
@@ -232,53 +296,18 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
       partnerLocation: const LatLng(20.805013, 85.284934),
       segmentLabel: '400 kV · Site B · 442 m',
       isCritical: false,
+      isInspected: false,
       surveyDate: '28 Mar 2026',
       surveyDateTime: DateTime(2026, 3, 28),
       defectCount: 0,
     ),
-
-    // 4. 220KV Line - Site A (surveyed 12 Apr 2026)
-    MapTower(
-      id: 'T01-220KV-SA',
-      name: '220KV Tower 1 (Site A)',
-      voltage: '220 kV',
-      lineName: '220 kV line',
-      site: 'Site A',
-      towerNumber: 1,
-      location: const LatLng(20.804765, 85.208481),
-      altitude: 42.254,
-      spanToNext: '363 m to T02',
-      partnerTowerId: 'T02-220KV-SA',
-      partnerLocation: const LatLng(20.801503, 85.208490),
-      segmentLabel: '220 kV · Site A · 363 m',
-      isCritical: false,
-      surveyDate: '12 Apr 2026',
-      surveyDateTime: DateTime(2026, 4, 12),
-      defectCount: 0,
-    ),
-    MapTower(
-      id: 'T02-220KV-SA',
-      name: '220KV Tower 2 (Site A)',
-      voltage: '220 kV',
-      lineName: '220 kV line',
-      site: 'Site A',
-      towerNumber: 2,
-      location: const LatLng(20.801503, 85.208490),
-      altitude: 53.802,
-      spanToNext: '363 m to T01',
-      partnerTowerId: 'T01-220KV-SA',
-      partnerLocation: const LatLng(20.804765, 85.208481),
-      segmentLabel: '220 kV · Site A · 363 m',
-      isCritical: false,
-      surveyDate: '12 Apr 2026',
-      surveyDateTime: DateTime(2026, 4, 12),
-      defectCount: 0,
-    ),
   ];
 
-  // Penpot Initial Default: 20 Apr 2026 (Latest), Centered on Site A (20.8246° N, 85.2677° E)
+  // Initial Default: 20 Apr 2026 (Latest date towers displayed after login)
   String _selectedDate = '20 Apr 2026';
   String _selectedVoltage = 'All voltages';
+  String? _selectedCorridorTop;
+  String? _selectedCorridorBottom;
   LatLng _currentCenter = const LatLng(20.823400, 85.268100);
   double _currentZoom = 16.5;
   double _currentRotation = 0.0;
@@ -424,30 +453,9 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
     TowerCorridorService.loadCorridors().then((_) {
       if (mounted) setState(() {});
     });
-    // Synchronize active inspected tower (T01-400KV-SB) from JSON inspection data
-    final actualDefects = widget.tower.summary.componentCounts['cotter_pin_missing'] ?? 9;
-    final t01Index = _allMapTowers.indexWhere((t) => t.id == 'T01-400KV-SB');
-    if (t01Index != -1) {
-      final old = _allMapTowers[t01Index];
-      _allMapTowers[t01Index] = MapTower(
-        id: old.id,
-        name: old.name,
-        voltage: old.voltage,
-        lineName: old.lineName,
-        site: old.site,
-        towerNumber: old.towerNumber,
-        location: old.location,
-        altitude: widget.tower.location.altitudeM > 0 ? widget.tower.location.altitudeM : old.altitude,
-        spanToNext: old.spanToNext,
-        partnerTowerId: old.partnerTowerId,
-        partnerLocation: old.partnerLocation,
-        segmentLabel: old.segmentLabel,
-        isCritical: actualDefects > 0,
-        surveyDate: old.surveyDate,
-        surveyDateTime: old.surveyDateTime,
-        defectCount: actualDefects,
-      );
-    }
+    // Synchronize active inspected tower (T01-400KV-SB) from JSON inspection data safely
+    _syncTowerStatus();
+
     // Restore preserved date, voltage, and tower selections from AppState
     if (widget.initialDate != null && widget.initialDate!.isNotEmpty) {
       _selectedDate = widget.initialDate!;
@@ -455,43 +463,98 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
     if (widget.initialVoltage != null && widget.initialVoltage!.isNotEmpty) {
       _selectedVoltage = widget.initialVoltage!;
     }
-
-    // Find towers matching the initial active date and voltage
-    final matchingTowers = _allMapTowers.where((t) =>
-        (_selectedDate == 'All dates' || t.surveyDate == _selectedDate) &&
-        (_selectedVoltage == 'All voltages' || t.voltage == _selectedVoltage)).toList();
-
-    if (widget.initialTowerId != null && widget.initialTowerId!.isNotEmpty) {
-      final match = matchingTowers.where((t) => t.id == widget.initialTowerId);
-      if (match.isNotEmpty) {
-        _selectedTower = match.first;
-      } else if (matchingTowers.isNotEmpty) {
-        _selectedTower = matchingTowers.first;
-      } else {
-        _selectedTower = _allMapTowers.firstWhere((t) => t.id == 'T01-400KV-SA');
-      }
-    } else if (matchingTowers.isNotEmpty) {
-      _selectedTower = matchingTowers.first;
-    } else {
-      _selectedTower = _allMapTowers.firstWhere((t) => t.id == 'T01-400KV-SA');
+    if (widget.initialCorridorTop != null) {
+      _selectedCorridorTop = widget.initialCorridorTop;
+    }
+    if (widget.initialCorridorBottom != null) {
+      _selectedCorridorBottom = widget.initialCorridorBottom;
     }
 
-    // Set camera center and zoom based on the active selected date so towers are immediately visible
-    if (_selectedDate == '20 Apr 2026') {
-      _currentCenter = const LatLng(20.823400, 85.268100);
-      _currentZoom = 16.5;
-    } else if (_selectedDate == '16 Apr 2026') {
-      _currentCenter = const LatLng(20.829000, 85.259000);
-      _currentZoom = 15.0;
-    } else if (_selectedDate == '28 Mar 2026') {
-      _currentCenter = const LatLng(20.803800, 85.286600);
-      _currentZoom = 16.0;
-    } else if (_selectedDate == '12 Apr 2026') {
-      _currentCenter = const LatLng(20.803100, 85.208485);
-      _currentZoom = 16.5;
+    if (widget.returnFromInspection && widget.initialTowerId != null && widget.initialTowerId!.isNotEmpty) {
+      _focusOnTower(widget.initialTowerId!);
     } else {
-      _currentCenter = _selectedTower.location;
-      _currentZoom = 16.0;
+      // Find towers matching the initial active date and voltage
+      final matchingTowers = _allMapTowers.where((t) =>
+          (_selectedDate == 'All dates' || t.surveyDate == _selectedDate) &&
+          (_selectedVoltage == 'All voltages' || t.voltage == _selectedVoltage)).toList();
+
+      if (widget.initialTowerId != null && widget.initialTowerId!.isNotEmpty) {
+        final match = matchingTowers.where((t) => t.id == widget.initialTowerId);
+        if (match.isNotEmpty) {
+          _selectedTower = match.first;
+        } else if (matchingTowers.isNotEmpty) {
+          _selectedTower = matchingTowers.first;
+        } else {
+          _selectedTower = _allMapTowers.firstWhere((t) => t.id == 'T01-400KV-SB');
+        }
+      } else if (matchingTowers.isNotEmpty) {
+        _selectedTower = matchingTowers.firstWhere((t) => t.isInspected, orElse: () => matchingTowers.first);
+      } else {
+        _selectedTower = _allMapTowers.firstWhere((t) => t.id == 'T01-400KV-SB');
+      }
+
+      // Set camera center and zoom based on the active selected voltage and date
+      if (_selectedVoltage != 'All voltages') {
+        if (_selectedVoltage == '135 kV') {
+          _currentCenter = const LatLng(20.824721, 85.264611);
+          _currentZoom = 16.2;
+        } else if (_selectedVoltage == '400 kV') {
+          final isSiteAOnly = matchingTowers.every((t) => t.site == 'Site A' || t.id.contains('SA'));
+          final isSiteBOnly = matchingTowers.every((t) => t.site == 'Site B' || t.id.contains('SB'));
+          if (isSiteAOnly || _selectedDate == '20 Apr 2026') {
+            _currentCenter = const LatLng(20.823400, 85.268100);
+            _currentZoom = 16.5;
+          } else if (isSiteBOnly || _selectedDate == '28 Mar 2026') {
+            _currentCenter = const LatLng(20.803800, 85.286600);
+            _currentZoom = 16.0;
+          } else {
+            _currentCenter = const LatLng(20.813600, 85.277300);
+            _currentZoom = 14.5;
+          }
+        } else if (_selectedVoltage == '220 kV') {
+          final isSiteAOnly = matchingTowers.every((t) => t.site == 'Site A' || t.id.contains('SA'));
+          final isSiteBOnly = matchingTowers.every((t) => t.site == 'Site B' || t.id.contains('SB'));
+          if (isSiteAOnly) {
+            _currentCenter = const LatLng(20.803149, 85.208488);
+            _currentZoom = 16.0;
+          } else if (isSiteBOnly) {
+            _currentCenter = const LatLng(20.834668, 85.256791);
+            _currentZoom = 16.0;
+          } else {
+            _currentCenter = const LatLng(20.823800, 85.267000);
+            _currentZoom = 15.0;
+          }
+        } else if (matchingTowers.isNotEmpty) {
+          _currentCenter = matchingTowers.first.location;
+          _currentZoom = 16.0;
+        }
+        if (matchingTowers.isNotEmpty) {
+          final info = TowerCorridorService.getInfo(matchingTowers.first.name);
+          final arrow = info?.corridorArrow ?? '${matchingTowers.first.site} Line';
+          final from = arrow.contains(' → ') ? arrow.split(' → ').first.trim() : (info?.fromSubstation ?? 'Meramundali');
+          final to = arrow.contains(' → ') ? arrow.split(' → ').last.trim() : (info?.toSubstation ?? matchingTowers.first.site);
+          _selectedCorridorTop = '$_selectedVoltage · $from →';
+          _selectedCorridorBottom = to;
+        }
+      } else if (_selectedDate == '20 Apr 2026') {
+        _currentCenter = const LatLng(20.823400, 85.268100);
+        _currentZoom = 16.5;
+      } else if (_selectedDate == '16 Apr 2026') {
+        _currentCenter = const LatLng(20.829000, 85.259000);
+        _currentZoom = 15.0;
+      } else if (_selectedDate == '28 Mar 2026') {
+        _currentCenter = const LatLng(20.803800, 85.286600);
+        _currentZoom = 16.0;
+      } else if (_selectedDate == '29 Mar 2026') {
+        _currentCenter = const LatLng(20.817900, 85.235900);
+        _currentZoom = 14.0;
+      } else if (_selectedDate == '12 Apr 2026') {
+        _currentCenter = const LatLng(20.803100, 85.208485);
+        _currentZoom = 16.5;
+      } else {
+        _currentCenter = const LatLng(20.817900, 85.235900);
+        _currentZoom = 14.0;
+      }
     }
     _mapEventSub = _mapController.mapEventStream.listen((event) {
       if (mounted && (event.camera.rotation - _currentRotation).abs() > 0.01) {
@@ -507,6 +570,106 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
     _mapEventSub?.cancel();
     _mapController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(NetworkMapOverviewView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _syncTowerStatus();
+    if (widget.returnFromInspection &&
+        widget.initialTowerId != null &&
+        widget.initialTowerId!.isNotEmpty &&
+        (!oldWidget.returnFromInspection || widget.initialTowerId != oldWidget.initialTowerId)) {
+      _focusOnTower(widget.initialTowerId!);
+    }
+  }
+
+  void _focusOnTower(String towerId) {
+    final towerDef = TowerRegistry.getTower(towerId);
+    final match = _allMapTowers.firstWhere(
+      (t) => t.id == towerId ||
+          (towerDef != null && (t.id == towerDef.displayCode || t.name == towerDef.name)),
+      orElse: () => _allMapTowers.firstWhere((t) => t.id == 'T01-400KV-SB'),
+    );
+    _selectedTower = match;
+    _selectedDate = match.surveyDate;
+
+    // If a voltage/corridor was selected before going to inspection, preserve it!
+    final preservedVoltage = (widget.initialVoltage != null && widget.initialVoltage!.isNotEmpty)
+        ? widget.initialVoltage!
+        : _selectedVoltage;
+    if (preservedVoltage != 'All voltages') {
+      _selectedVoltage = preservedVoltage;
+      if (widget.initialCorridorTop != null && widget.initialCorridorBottom != null) {
+        _selectedCorridorTop = widget.initialCorridorTop;
+        _selectedCorridorBottom = widget.initialCorridorBottom;
+      } else if (_selectedCorridorTop == null || _selectedCorridorBottom == null) {
+        final info = TowerCorridorService.getInfo(match.name);
+        final arrow = info?.corridorArrow ?? '${match.site} Line';
+        final from = arrow.contains(' → ') ? arrow.split(' → ').first.trim() : (info?.fromSubstation ?? 'Meramundali');
+        final to = arrow.contains(' → ') ? arrow.split(' → ').last.trim() : (info?.toSubstation ?? match.site);
+        _selectedCorridorTop = '$_selectedVoltage · $from →';
+        _selectedCorridorBottom = to;
+      }
+    } else {
+      _selectedVoltage = 'All voltages';
+      _selectedCorridorTop = null;
+      _selectedCorridorBottom = null;
+    }
+    _isSidebarOpen = false; // Right bar CLOSED as requested
+
+    final partner = _allMapTowers.firstWhere(
+      (t) => t.id == match.partnerTowerId,
+      orElse: () => match,
+    );
+    final midLat = (match.location.latitude + partner.location.latitude) / 2.0;
+    final midLng = (match.location.longitude + partner.location.longitude) / 2.0;
+    _currentCenter = LatLng(midLat, midLng);
+    _currentZoom = match.voltage == '135 kV' ? 16.2 : 16.0;
+
+    try {
+      _mapController.move(_currentCenter, _currentZoom);
+    } catch (_) {}
+
+    widget.onDateChanged?.call(_selectedDate);
+    widget.onVoltageChanged?.call(_selectedVoltage);
+    widget.onTowerChanged?.call(_selectedTower.id);
+    widget.onCorridorChanged?.call(_selectedCorridorTop, _selectedCorridorBottom);
+  }
+
+  void _syncTowerStatus() {
+    final t01Index = _allMapTowers.indexWhere((t) => t.id == 'T01-400KV-SB');
+    if (t01Index != -1) {
+      final old = _allMapTowers[t01Index];
+      // Only read defects from widget.tower if it is actually the 400KV tower
+      final is400Kv = widget.tower.towerId == '400KV_Tower_1_Site_B' ||
+          widget.tower.towerId == 'T01-400KV-SB' ||
+          widget.tower.towerName.contains('400KV');
+      final actualDefects = is400Kv
+          ? (widget.tower.summary.componentCounts['cotter_pin_missing'] ?? 9)
+          : 9;
+      _allMapTowers[t01Index] = MapTower(
+        id: old.id,
+        name: old.name,
+        voltage: old.voltage,
+        lineName: old.lineName,
+        site: old.site,
+        towerNumber: old.towerNumber,
+        location: old.location,
+        altitude: (is400Kv && widget.tower.location.altitudeM > 0)
+            ? widget.tower.location.altitudeM
+            : (old.altitude > 0 ? old.altitude : 43.881),
+        spanToNext: old.spanToNext,
+        partnerTowerId: old.partnerTowerId,
+        partnerLocation: old.partnerLocation,
+        segmentLabel: old.segmentLabel,
+        isCritical: true, // T01-400KV-SB is permanently the critical tower with defects
+        isInspected: true,
+        surveyDate: old.surveyDate,
+        surveyDateTime: old.surveyDateTime,
+        defectCount: actualDefects,
+      );
+    }
   }
 
   void _zoomIn() {
@@ -548,12 +711,27 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
     return list;
   }
 
-  void _selectVoltage(String voltage, [List<MapTower>? towers]) {
+  void _selectVoltage(String voltage, [List<MapTower>? towers, String? corridorArrow, String? corridorTo]) {
     setState(() {
       _selectedVoltage = voltage;
       _showVoltageDropdown = false;
       _showCalendarDropdown = false;
       _expandedVoltageCategory = null;
+
+      if (voltage == 'All voltages') {
+        _selectedCorridorTop = null;
+        _selectedCorridorBottom = null;
+      } else if (towers != null && towers.isNotEmpty) {
+        final info = TowerCorridorService.getInfo(towers.first.name);
+        final arrow = corridorArrow ?? info?.corridorArrow ?? '${towers.first.site} Line';
+        final from = arrow.contains(' → ') ? arrow.split(' → ').first.trim() : (info?.fromSubstation ?? 'Meramundali');
+        final to = corridorTo ?? (arrow.contains(' → ') ? arrow.split(' → ').last.trim() : (info?.toSubstation ?? towers.first.site));
+        _selectedCorridorTop = '$voltage · $from →';
+        _selectedCorridorBottom = to;
+      } else {
+        _selectedCorridorTop = 'Voltage';
+        _selectedCorridorBottom = voltage;
+      }
 
       final targetTowers = (towers != null && towers.isNotEmpty)
           ? towers
@@ -567,11 +745,75 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
 
       if (targetTowers.isNotEmpty) {
         _selectedTower = targetTowers.first;
-        _currentCenter = _selectedTower.location;
+        if (voltage == '135 kV') {
+          // Midpoint of 135 kV line (Screenshot 3) - individual pins without tooltips
+          _currentCenter = const LatLng(20.824721, 85.264611);
+          _currentZoom = 16.2;
+        } else if (voltage == '400 kV') {
+          final isSiteAOnly = targetTowers.every((t) => t.site == 'Site A' || t.id.contains('SA'));
+          final isSiteBOnly = targetTowers.every((t) => t.site == 'Site B' || t.id.contains('SB'));
+          if (isSiteAOnly || _selectedDate == '20 Apr 2026') {
+            _currentCenter = const LatLng(20.823400, 85.268100);
+            _currentZoom = 16.5;
+          } else if (isSiteBOnly || _selectedDate == '28 Mar 2026') {
+            _currentCenter = const LatLng(20.803800, 85.286600);
+            _currentZoom = 16.0;
+          } else {
+            double sumLat = 0;
+            double sumLng = 0;
+            for (final t in targetTowers) {
+              sumLat += t.location.latitude;
+              sumLng += t.location.longitude;
+            }
+            _currentCenter = LatLng(sumLat / targetTowers.length, sumLng / targetTowers.length);
+            _currentZoom = 14.5;
+          }
+        } else if (voltage == '220 kV') {
+          final isSiteAOnly = targetTowers.every((t) => t.site == 'Site A' || t.id.contains('SA'));
+          final isSiteBOnly = targetTowers.every((t) => t.site == 'Site B' || t.id.contains('SB'));
+          if (isSiteAOnly) {
+            _currentCenter = const LatLng(20.803149, 85.208488);
+            _currentZoom = 16.0;
+          } else if (isSiteBOnly) {
+            _currentCenter = const LatLng(20.834668, 85.256791);
+            _currentZoom = 16.0;
+          } else {
+            double sumLat = 0;
+            double sumLng = 0;
+            for (final t in targetTowers) {
+              sumLat += t.location.latitude;
+              sumLng += t.location.longitude;
+            }
+            _currentCenter = LatLng(sumLat / targetTowers.length, sumLng / targetTowers.length);
+            _currentZoom = 15.0;
+          }
+        } else if (voltage == 'All voltages') {
+          if (_selectedDate == '20 Apr 2026') {
+            _currentCenter = const LatLng(20.823400, 85.268100);
+            _currentZoom = 16.5;
+          } else if (_selectedDate == '28 Mar 2026') {
+            _currentCenter = const LatLng(20.803800, 85.286600);
+            _currentZoom = 16.0;
+          } else if (_selectedDate == '29 Mar 2026') {
+            _currentCenter = const LatLng(20.817900, 85.235900);
+            _currentZoom = 14.0;
+          } else {
+            _currentCenter = const LatLng(20.817900, 85.235900);
+            _currentZoom = 14.0;
+          }
+        } else {
+          _currentCenter = _selectedTower.location;
+          _currentZoom = 16.0;
+        }
+        _mapController.move(_currentCenter, _currentZoom);
+      } else if (voltage == 'All voltages') {
+        _currentCenter = const LatLng(20.817900, 85.235900);
+        _currentZoom = 14.0;
         _mapController.move(_currentCenter, _currentZoom);
       }
       widget.onVoltageChanged?.call(voltage);
       widget.onTowerChanged?.call(_selectedTower.id);
+      widget.onCorridorChanged?.call(_selectedCorridorTop, _selectedCorridorBottom);
     });
   }
 
@@ -582,6 +824,10 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
       _showVoltageDropdown = false;
       _expandedVoltageCategory = null;
       _selectedVoltage = 'All voltages';
+      _selectedCorridorTop = null;
+      _selectedCorridorBottom = null;
+      _isSidebarOpen = false; // Close right sidebar so only map page stays
+      widget.onCorridorChanged?.call(null, null);
 
       // Center map on the towers for this date
       final dateTowers = (date == 'All dates')
@@ -599,12 +845,15 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
         } else if (date == '28 Mar 2026') {
           _currentCenter = const LatLng(20.803800, 85.286600);
           _currentZoom = 16.0;
+        } else if (date == '29 Mar 2026') {
+          _currentCenter = const LatLng(20.817900, 85.235900);
+          _currentZoom = 14.0;
         } else if (date == '12 Apr 2026') {
           _currentCenter = const LatLng(20.803100, 85.208485);
           _currentZoom = 16.5;
         } else {
-          _currentCenter = const LatLng(20.820000, 85.260000);
-          _currentZoom = 13.5;
+          _currentCenter = const LatLng(20.817900, 85.235900);
+          _currentZoom = 14.0;
         }
         _mapController.move(_currentCenter, _currentZoom);
       }
@@ -762,9 +1011,8 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
     }
 
     // 2. Tower connecting line segment
-    // When Grid is active: show connecting line ONLY for the currently selected tower.
-    // When Grid is inactive: show connecting lines for all visible tower pairs.
-    final towersForConnectingLines = _isGridActive ? [_selectedTower] : visibleTowers;
+    // Connecting lines for all visible tower pairs matching active date & voltage filters
+    final towersForConnectingLines = visibleTowers;
     final processedPairs = <String>{};
 
     for (final tower in towersForConnectingLines) {
@@ -956,8 +1204,10 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
             height: 36,
             alignment: Alignment.topCenter,
             child: TowerPinWidget(
-              label: tower.isCritical ? '✕' : '-',
-              fillColor: tower.isCritical ? const Color(0xFFDB322E) : const Color(0xFF707E94),
+              label: tower.isCritical ? '✕' : (tower.isInspected ? '✓' : '-'),
+              fillColor: tower.isCritical
+                  ? const Color(0xFFDB322E)
+                  : (tower.isInspected ? const Color(0xFF2E9D57) : const Color(0xFF707E94)),
               isSelected: isSelected,
               onTap: () {
                 setState(() {
@@ -994,7 +1244,8 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
         }
         final clusterCenter = LatLng(sumLat / tList.length, sumLng / tList.length);
         final cCritical = tList.where((t) => t.isCritical).length;
-        final cUninspected = tList.where((t) => !t.isCritical).length;
+        final cNormal = tList.where((t) => t.isNormal).length;
+        final cUninspected = tList.where((t) => !t.isInspected).length;
         final clusterTitle = '${tList.length} towers · ${tList.first.voltage} ${tList.first.site}';
 
         markers.add(
@@ -1068,7 +1319,28 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
                                 ),
                               ),
                             ],
-                            if (cCritical > 0 && cUninspected > 0)
+                            if (cCritical > 0 && (cNormal > 0 || cUninspected > 0))
+                              const SizedBox(width: 8),
+                            if (cNormal > 0) ...[
+                              Container(
+                                width: 6,
+                                height: 6,
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFF2E9D57),
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                '$cNormal Normal',
+                                style: const TextStyle(
+                                  fontSize: 10.5,
+                                  color: Color(0xFF64748B),
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                            if (cNormal > 0 && cUninspected > 0)
                               const SizedBox(width: 8),
                             if (cUninspected > 0) ...[
                               Container(
@@ -1113,6 +1385,7 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
                       painter: _ClusterDonutPainter(
                         totalCount: tList.length,
                         criticalCount: cCritical,
+                        normalCount: cNormal,
                         uninspectedCount: cUninspected,
                       ),
                       child: Center(
@@ -1136,7 +1409,8 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
     }
 
     final criticalCount = visibleTowers.where((t) => t.isCritical).length;
-    final uninspectedCount = visibleTowers.where((t) => !t.isCritical).length;
+    final normalCount = visibleTowers.where((t) => t.isNormal).length;
+    final uninspectedCount = visibleTowers.where((t) => !t.isInspected).length;
 
     final scaleDisplayString = scaleMeters >= 1000
         ? '${(scaleMeters / 1000).toStringAsFixed(scaleMeters % 1000 == 0 ? 0 : 1)} km'
@@ -1267,7 +1541,7 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    _buildConditionCard(visibleTowers, criticalCount, uninspectedCount),
+                    _buildConditionCard(visibleTowers, criticalCount, normalCount, uninspectedCount),
                     if (_isGridActive) ...[
                       const SizedBox(height: 8),
                       _buildPowerNetworkLegendCard(),
@@ -1278,7 +1552,7 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    _buildConditionCard(visibleTowers, criticalCount, uninspectedCount),
+                    _buildConditionCard(visibleTowers, criticalCount, normalCount, uninspectedCount),
                     if (_isGridActive) ...[
                       const SizedBox(width: 12),
                       _buildPowerNetworkLegendCard(),
@@ -1907,6 +2181,14 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
                   setState(() {
                     _showCalendarDropdown = !_showCalendarDropdown;
                     _showVoltageDropdown = false;
+                    if (_showCalendarDropdown) {
+                      if (_selectedDate.contains('Apr')) {
+                        _calendarDisplayMonth = DateTime(2026, 4, 1);
+                      } else {
+                        // Default to latest surveyed month (March 2026)
+                        _calendarDisplayMonth = DateTime(2026, 3, 1);
+                      }
+                    }
                   });
                 },
                 borderRadius: BorderRadius.circular(6),
@@ -1983,7 +2265,9 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
                   setState(() {
                     _showVoltageDropdown = !_showVoltageDropdown;
                     _showCalendarDropdown = false;
-                    _expandedVoltageCategory = null;
+                    _expandedVoltageCategory = _showVoltageDropdown && _selectedVoltage != 'All voltages'
+                        ? _selectedVoltage
+                        : null;
                   });
                 },
                 borderRadius: BorderRadius.circular(6),
@@ -2006,51 +2290,19 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
                         ),
                       ),
                       const SizedBox(width: 8),
-                      Builder(
-                        builder: (context) {
-                          final dateTowers = (_selectedDate == 'All dates')
-                              ? _allMapTowers
-                              : _allMapTowers.where((t) => t.surveyDate == _selectedDate).toList();
-                          final voltageTowers = (_selectedVoltage == 'All voltages')
-                              ? dateTowers
-                              : dateTowers.where((t) => t.voltage == _selectedVoltage).toList();
-                          final primaryTower = (_selectedTower.voltage == _selectedVoltage && voltageTowers.contains(_selectedTower))
-                              ? _selectedTower
-                              : (voltageTowers.isNotEmpty ? voltageTowers.first : null);
-                          final corridorInfo = primaryTower != null ? TowerCorridorService.getInfo(primaryTower.name) : null;
-
-                          if (_selectedVoltage != 'All voltages' && corridorInfo != null) {
-                            return Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  '$_selectedVoltage · ${corridorInfo.fromSubstation} →',
-                                  style: const TextStyle(fontSize: 9.5, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
-                                ),
-                                Text(
-                                  corridorInfo.toSubstation,
-                                  style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
-                                ),
-                              ],
-                            );
-                          }
-
-                          return Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Text(
-                                'Voltage',
-                                style: TextStyle(fontSize: 9.5, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
-                              ),
-                              Text(
-                                _selectedVoltage,
-                                style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
-                              ),
-                            ],
-                          );
-                        },
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            _selectedCorridorTop ?? 'Voltage',
+                            style: const TextStyle(fontSize: 9.5, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
+                          ),
+                          Text(
+                            _selectedCorridorBottom ?? _selectedVoltage,
+                            style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                          ),
+                        ],
                       ),
                       const SizedBox(width: 6),
                       Icon(
@@ -2424,7 +2676,11 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
                               shape: BoxShape.circle,
                               border: hasSurvey && !isSelected
                                   ? Border.all(
-                                      color: hasCritical ? const Color(0xFFDB322E) : const Color(0xFF1967D2),
+                                      color: hasCritical
+                                          ? const Color(0xFFDB322E)
+                                          : (year == 2026 && month == 3 && d == 29
+                                              ? const Color(0xFF2E9D57)
+                                              : const Color(0xFF1967D2)),
                                       width: 1.3,
                                     )
                                   : null,
@@ -2451,6 +2707,27 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
                                 height: 6,
                                 decoration: BoxDecoration(
                                   color: const Color(0xFFDB322E),
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: Colors.white, width: 1.0),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withValues(alpha: 0.25),
+                                      blurRadius: 2,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          // Small green mark on March 29, 2026 (all 6 towers normal condition / 0 defects)
+                          if (year == 2026 && month == 3 && d == 29)
+                            Positioned(
+                              top: -1,
+                              right: -1,
+                              child: Container(
+                                width: 6,
+                                height: 6,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF2E9D57),
                                   shape: BoxShape.circle,
                                   border: Border.all(color: Colors.white, width: 1.0),
                                   boxShadow: [
@@ -2628,22 +2905,23 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
     if (vTowers.isNotEmpty) {
       final groups = <String, List<MapTower>>{};
       for (final t in vTowers) {
-        final info = TowerCorridorService.getInfo(t.name);
-        final arrow = info?.corridorArrow ?? '${t.site} Line';
-        groups.putIfAbsent(arrow, () => []).add(t);
+        final groupKey = t.site;
+        groups.putIfAbsent(groupKey, () => []).add(t);
       }
 
       for (final entry in groups.entries) {
-        final arrow = entry.key;
         final towers = entry.value;
+        final info = TowerCorridorService.getInfo(towers.first.name);
+        final arrow = info?.corridorArrow ?? '${towers.first.site} Line';
         final site = towers.first.site;
         final subtitle = '$site · ${towers.length} towers';
+        final toName = arrow.contains(' → ') ? arrow.split(' → ').last.trim() : (info?.toSubstation ?? site);
 
         corridorCards.add(
           Padding(
             padding: const EdgeInsets.only(left: 38, top: 2, bottom: 6, right: 14),
             child: InkWell(
-              onTap: () => _selectVoltage(voltage, towers),
+              onTap: () => _selectVoltage(voltage, towers, arrow, toName),
               borderRadius: BorderRadius.circular(4),
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 2),
@@ -2808,6 +3086,10 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
   Widget _buildRightSidebar(Circuit circuitSW, Phase? phaseR) {
     final tower = _selectedTower;
     final isCritical = tower.isCritical;
+    final towerDef = TowerRegistry.getTower(tower.id);
+    final isInspected = tower.isInspected || (towerDef?.hasInspectionData ?? false);
+    final isSingleCircuit = tower.id.contains('135KV');
+    final baseAsset = towerDef?.baseImageAsset ?? (tower.id == 'T01-400KV-SB' ? AppConfig.baseTowerImageAsset : null);
 
     return Container(
       decoration: BoxDecoration(
@@ -2927,7 +3209,7 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
                             ),
                           ),
                           const SizedBox(height: 10),
-                          if (isCritical) ...[
+                          if (isInspected) ...[
                             const Text(
                               'Tower type',
                               style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
@@ -2937,8 +3219,8 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
                               spacing: 6,
                               runSpacing: 4,
                               children: [
-                                _buildPillTag('Double circuit'),
-                                _buildPillTag('Suspension'),
+                                _buildPillTag(isSingleCircuit ? 'Single circuit' : 'Double circuit'),
+                                _buildPillTag(tower.voltage.contains('135') || tower.id.contains('135KV') ? 'Tension' : 'Suspension'),
                               ],
                             ),
                           ] else ...[
@@ -2950,22 +3232,9 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
                         ],
                       ),
                     ),
-                    // Aerial Photo Thumbnail (zoomed in a little bit, no frame number text)
-                    if (isCritical)
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(10),
-                        child: SizedBox(
-                          width: 96,
-                          height: 80,
-                          child: Transform.scale(
-                            scale: 1.45,
-                            child: ImageService.buildImage(
-                              imagePath: AppConfig.baseTowerImageAsset,
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-                        ),
-                      )
+                    // Aerial Photo Thumbnail (accurately zoomed into tower structure with high clarity)
+                    if (isInspected && baseAsset != null)
+                      _buildTowerThumbnail(tower, baseAsset)
                     else
                       Container(
                         width: 96,
@@ -3007,13 +3276,13 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
                 _buildSidebarTab(
                   'Defects',
                   1,
-                  count: isCritical ? '${tower.defectCount}' : null,
+                  count: isCritical ? '${tower.defectCount}' : (isInspected ? '0' : null),
                   isRed: isCritical,
                 ),
                 _buildSidebarTab(
                   'History',
                   2,
-                  count: isCritical ? '1' : null,
+                  count: isInspected ? '1' : null,
                 ),
               ],
             ),
@@ -3029,9 +3298,8 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
           ),
 
           // Bottom Section:
-          // Requirement 1: For grey towers do NOT show "Open Inspection details"!
-          // Show button ONLY for critical/inspected towers!
-          if (isCritical)
+          // Show button for all inspected towers!
+          if (isInspected)
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: const BoxDecoration(
@@ -3111,6 +3379,10 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
 
   // --- OVERVIEW TAB CONTENT (strictly matching user reference) ---
   Widget _buildOverviewTabContent(MapTower tower) {
+    final towerDef = TowerRegistry.getTower(tower.id);
+    final isInspected = tower.isInspected || (towerDef?.hasInspectionData ?? false);
+    final isSingleCircuit = tower.id.contains('135KV');
+
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
       children: [
@@ -3118,10 +3390,14 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           decoration: BoxDecoration(
-            color: tower.isCritical ? const Color(0xFFFDF2F2) : const Color(0xFFF1F5F9),
+            color: tower.isCritical
+                ? const Color(0xFFFDF2F2)
+                : (isInspected ? const Color(0xFFF0FDF4) : const Color(0xFFF1F5F9)),
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
-              color: tower.isCritical ? const Color(0xFFFEE2E2) : const Color(0xFFCBD5E1),
+              color: tower.isCritical
+                  ? const Color(0xFFFEE2E2)
+                  : (isInspected ? const Color(0xFFBBF7D0) : const Color(0xFFCBD5E1)),
             ),
           ),
           child: Row(
@@ -3131,12 +3407,14 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
                 width: 24,
                 height: 24,
                 decoration: BoxDecoration(
-                  color: tower.isCritical ? const Color(0xFFDC2626) : const Color(0xFF707E94),
+                  color: tower.isCritical
+                      ? const Color(0xFFDC2626)
+                      : (isInspected ? const Color(0xFF16A34A) : const Color(0xFF707E94)),
                   shape: BoxShape.circle,
                 ),
                 alignment: Alignment.center,
                 child: Icon(
-                  tower.isCritical ? Icons.close : Icons.remove,
+                  tower.isCritical ? Icons.close : (isInspected ? Icons.check : Icons.remove),
                   size: 15,
                   color: Colors.white,
                 ),
@@ -3147,23 +3425,31 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      tower.isCritical ? 'Critical condition' : 'Not inspected',
+                      tower.isCritical
+                          ? 'Critical condition'
+                          : (isInspected ? 'Normal condition' : 'Not inspected'),
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
-                        color: tower.isCritical ? const Color(0xFF991B1B) : const Color(0xFF334155),
+                        color: tower.isCritical
+                            ? const Color(0xFF991B1B)
+                            : (isInspected ? const Color(0xFF166534) : const Color(0xFF334155)),
                       ),
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      tower.isCritical
-                          ? '${tower.defectCount} cotter pins missing - first survey of this tower'
-                          : 'No images of this tower in the ${tower.surveyDate} survey',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: tower.isCritical ? const Color(0xFFDC2626) : const Color(0xFF64748B),
+                    if (tower.isCritical || !isInspected) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        tower.isCritical
+                            ? '${tower.defectCount} cotter pins missing - first survey of this tower'
+                            : 'No images of this tower in the ${tower.surveyDate} survey',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: tower.isCritical
+                              ? const Color(0xFFDC2626)
+                              : const Color(0xFF64748B),
+                        ),
                       ),
-                    ),
+                    ],
                   ],
                 ),
               ),
@@ -3212,7 +3498,9 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
         _buildOverviewMetaRow(
           icon: Icons.grid_view_outlined,
           label: 'Circuit & phase',
-          value: tower.isCritical ? '2 circuits · 6 phases' : 'Not available',
+          value: isInspected
+              ? (isSingleCircuit ? '1 circuit · 3 phases' : '2 circuits · 6 phases')
+              : 'Not available',
         ),
         const Divider(height: 1, thickness: 1, color: Color(0xFFF1F5F9)),
 
@@ -3234,17 +3522,59 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
                 decoration: BoxDecoration(
-                  color: tower.isCritical ? const Color(0xFFFEE2E2) : const Color(0xFFF1F5F9),
+                  color: tower.isCritical
+                      ? const Color(0xFFFEE2E2)
+                      : (isInspected ? const Color(0xFFDCFCE7) : const Color(0xFFF1F5F9)),
                   borderRadius: BorderRadius.circular(4),
                 ),
-                child: Text(
-                  tower.isCritical ? '${tower.defectCount} Critical' : '0 Critical',
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                    color: tower.isCritical ? const Color(0xFFDC2626) : const Color(0xFF64748B),
-                  ),
-                ),
+                child: tower.isCritical
+                    ? Text(
+                        '${tower.defectCount} Critical',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFFDC2626),
+                        ),
+                      )
+                    : (isInspected
+                        ? RichText(
+                            text: const TextSpan(
+                              children: [
+                                TextSpan(
+                                  text: '0 Critical',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF64748B),
+                                  ),
+                                ),
+                                TextSpan(
+                                  text: ' · ',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF64748B),
+                                  ),
+                                ),
+                                TextSpan(
+                                  text: 'Normal',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF166534),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        : const Text(
+                            '0 Critical',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF64748B),
+                            ),
+                          )),
               ),
               const SizedBox(width: 6),
               Container(
@@ -3356,7 +3686,64 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
 
   // --- DEFECTS TAB CONTENT ---
   Widget _buildDefectsTabContent(MapTower tower) {
-    if (!tower.isCritical) {
+    final towerDef = TowerRegistry.getTower(tower.id);
+    final isInspected = tower.isInspected || (towerDef?.hasInspectionData ?? false);
+
+    if (isInspected && !tower.isCritical) {
+      return ListView(
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF0FDF4),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: const Color(0xFFBBF7D0)),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF16A34A),
+                    shape: BoxShape.circle,
+                  ),
+                  alignment: Alignment.center,
+                  child: const Icon(Icons.check, size: 20, color: Colors.white),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: const [
+                      Text(
+                        'Normal condition',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF166534),
+                        ),
+                      ),
+                      SizedBox(height: 2),
+                      Text(
+                        '0 defects detected',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF15803D),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+    }
+
+    if (!isInspected) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -3371,7 +3758,7 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
                   shape: BoxShape.circle,
                 ),
                 alignment: Alignment.center,
-                child: const Icon(Icons.check_circle_outline, size: 28, color: Color(0xFF64748B)),
+                child: const Icon(Icons.remove, size: 28, color: Color(0xFF64748B)),
               ),
               const SizedBox(height: 12),
               const Text(
@@ -3443,9 +3830,14 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
   }
 
   List<Widget> _buildDefectPhaseRows(MapTower tower) {
-    if (tower.id == 'T01-400KV-SB' && widget.tower.circuits.isNotEmpty) {
+    final towerDef = TowerRegistry.getTower(tower.id);
+    final Tower? activeTower = (widget.tower.towerId == tower.id || widget.tower.towerId == towerDef?.towerId)
+        ? widget.tower
+        : DataService.getCachedData(tower.id)?.tower;
+
+    if (activeTower != null && activeTower.circuits.isNotEmpty) {
       final rows = <Widget>[];
-      for (final circuit in widget.tower.circuits) {
+      for (final circuit in activeTower.circuits) {
         for (final entry in circuit.phases.entries) {
           final phaseName = entry.key;
           final phase = entry.value;
@@ -3458,7 +3850,7 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
             if (img.distanceToTowerM > 0) {
               distances.add(img.distanceToTowerM);
             }
-            final missingCount = img.missingCotterPinCount;
+            final int missingCount = img.missingCotterPinCount;
             if (missingCount > 0) {
               phaseMissing += missingCount;
               defectIndices.add(i + 1);
@@ -3483,7 +3875,7 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
 
           rows.add(
             _buildDefectPhaseRow(
-              title: '${circuit.circuitId} · Phase $phaseName',
+              title: '${circuit.circuitId.replaceAll('_', ' ')} · Phase $phaseName',
               subtitle: subtitle,
               count: '$phaseMissing',
               isCritical: isCritical,
@@ -3494,14 +3886,16 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
       }
 
       // Earth peaks SW · NE
-      rows.add(
-        _buildDefectPhaseRow(
-          title: 'Earth peaks SW · NE',
-          subtitle: '6 images',
-          count: '0',
-          isNormal: true,
-        ),
-      );
+      if (tower.id.contains('400KV')) {
+        rows.add(
+          _buildDefectPhaseRow(
+            title: 'Earth peaks SW · NE',
+            subtitle: '6 images',
+            count: '0',
+            isNormal: true,
+          ),
+        );
+      }
 
       return rows;
     }
@@ -3518,7 +3912,7 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
 
   // --- HISTORY TAB CONTENT ---
   Widget _buildHistoryTabContent(MapTower tower) {
-    if (!tower.isCritical) {
+    if (!tower.isInspected) {
       return const Center(
         child: Padding(
           padding: EdgeInsets.all(24),
@@ -3529,6 +3923,8 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
         ),
       );
     }
+
+    final isCritical = tower.isCritical;
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
@@ -3560,15 +3956,15 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFDE8E8),
+                  color: isCritical ? const Color(0xFFFDE8E8) : const Color(0xFFE8F5E9),
                   borderRadius: BorderRadius.circular(4),
                 ),
-                child: const Text(
-                  'Critical condition',
+                child: Text(
+                  isCritical ? 'Critical condition' : 'Normal condition',
                   style: TextStyle(
                     fontSize: 11.5,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFFDC2626),
+                    color: isCritical ? const Color(0xFFDC2626) : const Color(0xFF2E7D32),
                   ),
                 ),
               ),
@@ -3710,12 +4106,16 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
                                   width: 22,
                                   height: 22,
                                   decoration: BoxDecoration(
-                                    color: tower.isCritical ? const Color(0xFFDB322E) : const Color(0xFF707E94),
+                                    color: tower.isCritical
+                                        ? const Color(0xFFDB322E)
+                                        : (tower.isInspected ? const Color(0xFF2E9D57) : const Color(0xFF707E94)),
                                     shape: BoxShape.circle,
                                   ),
                                   alignment: Alignment.center,
                                   child: Icon(
-                                    tower.isCritical ? Icons.close : Icons.remove,
+                                    tower.isCritical
+                                        ? Icons.close
+                                        : (tower.isInspected ? Icons.check : Icons.remove),
                                     size: 14,
                                     color: Colors.white,
                                   ),
@@ -3761,17 +4161,23 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
                               child: Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                                 decoration: BoxDecoration(
-                                  color: tower.isCritical ? const Color(0xFFFDE8E8) : const Color(0xFFF1F5F9),
+                                  color: tower.isCritical
+                                      ? const Color(0xFFFDE8E8)
+                                      : (tower.isInspected ? const Color(0xFFDCFCE7) : const Color(0xFFF1F5F9)),
                                   borderRadius: BorderRadius.circular(4),
                                 ),
                                 child: Text(
-                                  tower.isCritical ? 'Critical' : 'Not inspected',
+                                  tower.isCritical
+                                      ? 'Critical'
+                                      : (tower.isInspected ? 'Normal' : 'Not inspected'),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: TextStyle(
                                     fontSize: 11,
                                     fontWeight: FontWeight.bold,
-                                    color: tower.isCritical ? const Color(0xFFB91C1C) : const Color(0xFF475569),
+                                    color: tower.isCritical
+                                        ? const Color(0xFFB91C1C)
+                                        : (tower.isInspected ? const Color(0xFF166534) : const Color(0xFF475569)),
                                   ),
                                 ),
                               ),
@@ -3921,6 +4327,100 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
   }
 
   // Helper widgets
+  _TowerCropInfo? _getTowerCropInfo(String towerId) {
+    if (towerId.contains('400KV') || towerId.contains('400')) {
+      return const _TowerCropInfo(rawW: 1920, rawH: 1080, bx: 761.7, by: 177.4, bw: 337.4, bh: 725.9);
+    }
+    if (towerId.contains('135KV') || towerId.contains('135')) {
+      if (towerId.contains('T02') || towerId.contains('Tower 2') || towerId.contains('Tower_2')) {
+        return const _TowerCropInfo(rawW: 1920, rawH: 1080, bx: 771.7, by: 12.7, bw: 414.0, bh: 1060.8);
+      }
+      return const _TowerCropInfo(rawW: 1920, rawH: 1080, bx: 794.3, by: 28.7, bw: 322.2, bh: 992.3);
+    }
+    if (towerId.contains('220KV-SA') || (towerId.contains('220') && towerId.contains('SA'))) {
+      if (towerId.contains('T02') || towerId.contains('Tower 2') || towerId.contains('Tower_2')) {
+        return const _TowerCropInfo(rawW: 3840, rawH: 2160, bx: 1656.7, by: 740.2, bw: 531.3, bh: 1413.9);
+      }
+      return const _TowerCropInfo(rawW: 3840, rawH: 2160, bx: 1050.6, by: 569.9, bw: 876.1, bh: 1565.4);
+    }
+    if (towerId.contains('220KV-SB') || (towerId.contains('220') && towerId.contains('SB'))) {
+      if (towerId.contains('T02') || towerId.contains('Tower 2') || towerId.contains('Tower_2')) {
+        return const _TowerCropInfo(rawW: 3840, rawH: 2160, bx: 1538.9, by: 271.5, bw: 892.0, bh: 1711.1);
+      }
+      return const _TowerCropInfo(rawW: 3840, rawH: 2160, bx: 1657.1, by: 774.4, bw: 433.0, bh: 1084.3);
+    }
+    return null;
+  }
+
+  Widget _buildTowerThumbnail(MapTower tower, String imagePath) {
+    const double thumbW = 96.0;
+    const double thumbH = 80.0;
+    final crop = _getTowerCropInfo(tower.id) ?? _getTowerCropInfo(tower.name);
+
+    if (crop != null) {
+      final double padH = (crop.bw * 0.35).clamp(30.0, crop.rawW);
+      final double padV = (crop.bh * 0.08).clamp(20.0, crop.rawH);
+      final double cropLeft = (crop.bx - padH).clamp(0.0, crop.rawW);
+      final double cropTop = (crop.by - padV).clamp(0.0, crop.rawH);
+      final double cropW = (crop.bw + 2 * padH).clamp(50.0, crop.rawW - cropLeft);
+      final double cropH = (crop.bh + 2 * padV).clamp(50.0, crop.rawH - cropTop);
+
+      final double scaleX = thumbW / cropW;
+      final double scaleY = thumbH / cropH;
+      final double scale = math.max(scaleX, scaleY);
+
+      final double renderImgW = crop.rawW * scale;
+      final double renderImgH = crop.rawH * scale;
+
+      final double cropCenterInRenderX = (cropLeft + cropW / 2) * scale;
+      final double cropCenterInRenderY = (cropTop + cropH / 2) * scale;
+
+      final double leftOffset = (thumbW / 2) - cropCenterInRenderX;
+      final double topOffset = (thumbH / 2) - cropCenterInRenderY;
+
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(10),
+        child: Container(
+          width: thumbW,
+          height: thumbH,
+          color: const Color(0xFF0F172A),
+          child: Stack(
+            clipBehavior: Clip.hardEdge,
+            children: [
+              Positioned(
+                left: leftOffset,
+                top: topOffset,
+                width: renderImgW,
+                height: renderImgH,
+                child: ImageService.buildImage(
+                  imagePath: imagePath,
+                  fit: BoxFit.fill,
+                  filterQuality: FilterQuality.high,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(10),
+      child: SizedBox(
+        width: thumbW,
+        height: thumbH,
+        child: Transform.scale(
+          scale: 1.8,
+          child: ImageService.buildImage(
+            imagePath: imagePath,
+            fit: BoxFit.cover,
+            filterQuality: FilterQuality.high,
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildPillTag(String text) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -4073,7 +4573,7 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
     );
   }
 
-  Widget _buildConditionCard(List<MapTower> visibleTowers, int criticalCount, int uninspectedCount) {
+  Widget _buildConditionCard(List<MapTower> visibleTowers, int criticalCount, int normalCount, int uninspectedCount) {
     return Container(
       width: 165,
       padding: const EdgeInsets.all(12),
@@ -4121,7 +4621,7 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
           const SizedBox(height: 4),
           _buildConditionRow(const Color(0xFFFBBF24), Icons.priority_high, 'Minor', '0'),
           const SizedBox(height: 4),
-          _buildConditionRow(const Color(0xFF22C55E), Icons.check, 'Normal', '0'),
+          _buildConditionRow(const Color(0xFF22C55E), Icons.check, 'Normal', '$normalCount'),
           const SizedBox(height: 4),
           _buildConditionRow(const Color(0xFF707E94), Icons.remove, 'Not inspected', '$uninspectedCount'),
         ],
@@ -4224,25 +4724,6 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
                     _buildLegendLineItem(const Color(0xFF19BCD7), 'Joda / Duburi (Old) 220 kV', strokeWidth: 2.8),
                     const SizedBox(height: 5),
                     _buildLegendLineItem(const Color(0xFFA78565), 'Charagadia 132 kV', strokeWidth: 1.6),
-                    const SizedBox(height: 5),
-                    Row(
-                      children: [
-                        Container(
-                          width: 12,
-                          height: 12,
-                          decoration: BoxDecoration(
-                            color: const Color(0x28A855F7),
-                            borderRadius: BorderRadius.circular(2),
-                            border: Border.all(color: const Color(0xFF7631EC), width: 1.5),
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        const Text(
-                          'Substation footprint',
-                          style: TextStyle(fontSize: 10, color: Color(0xFF334155), fontWeight: FontWeight.w500),
-                        ),
-                      ],
-                    ),
                   ],
                 ),
               ),
@@ -4986,6 +5467,18 @@ class _TowerPinPainter extends CustomPainter {
         Offset(cx + halfWidth, cy),
         symbolPaint,
       );
+    } else if (symbol == '✓') {
+      // Crisp check / tick mark centered at (cx, cy)
+      final checkPath = Path()
+        ..moveTo(cx - 3.8, cy + 0.2)
+        ..lineTo(cx - 1.0, cy + 3.0)
+        ..lineTo(cx + 4.2, cy - 2.8);
+      canvas.drawPath(
+        checkPath,
+        symbolPaint
+          ..strokeJoin = StrokeJoin.round
+          ..strokeCap = StrokeCap.round,
+      );
     } else {
       // Crisp cross (✕) centered exactly at (cx, cy)
       const double arm = 3.5;
@@ -5011,11 +5504,13 @@ class _TowerPinPainter extends CustomPainter {
 class _ClusterDonutPainter extends CustomPainter {
   final int totalCount;
   final int criticalCount;
+  final int normalCount;
   final int uninspectedCount;
 
   const _ClusterDonutPainter({
     required this.totalCount,
     required this.criticalCount,
+    this.normalCount = 0,
     required this.uninspectedCount,
   });
 
@@ -5041,10 +5536,17 @@ class _ClusterDonutPainter extends CustomPainter {
       Paint()..color = Colors.white,
     );
 
-    // Arc rect
+    if (totalCount <= 0) return;
+
     final rect = Rect.fromCircle(center: center, radius: radius - strokeWidth / 2);
     final paintCritical = Paint()
       ..color = const Color(0xFFDB322E)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.butt;
+
+    final paintNormal = Paint()
+      ..color = const Color(0xFF2E9D57)
       ..style = PaintingStyle.stroke
       ..strokeWidth = strokeWidth
       ..strokeCap = StrokeCap.butt;
@@ -5055,19 +5557,22 @@ class _ClusterDonutPainter extends CustomPainter {
       ..strokeWidth = strokeWidth
       ..strokeCap = StrokeCap.butt;
 
-    if (totalCount <= 0) return;
+    double startAngle = -math.pi / 2;
 
-    if (criticalCount == 0) {
-      canvas.drawArc(rect, 0, 2 * math.pi, false, paintUninspected);
-    } else if (uninspectedCount == 0) {
-      canvas.drawArc(rect, 0, 2 * math.pi, false, paintCritical);
-    } else {
-      // In reference image: right half is red, left half is grey
-      final sweepCritical = (criticalCount / totalCount) * 2 * math.pi;
-      final sweepUninspected = 2 * math.pi - sweepCritical;
-
-      canvas.drawArc(rect, -math.pi / 2, sweepCritical, false, paintCritical);
-      canvas.drawArc(rect, -math.pi / 2 + sweepCritical, sweepUninspected, false, paintUninspected);
+    if (criticalCount > 0) {
+      final sweep = (criticalCount / totalCount) * 2 * math.pi;
+      canvas.drawArc(rect, startAngle, sweep, false, paintCritical);
+      startAngle += sweep;
+    }
+    if (normalCount > 0) {
+      final sweep = (normalCount / totalCount) * 2 * math.pi;
+      canvas.drawArc(rect, startAngle, sweep, false, paintNormal);
+      startAngle += sweep;
+    }
+    if (uninspectedCount > 0) {
+      final sweep = (uninspectedCount / totalCount) * 2 * math.pi;
+      canvas.drawArc(rect, startAngle, sweep, false, paintUninspected);
+      startAngle += sweep;
     }
   }
 
@@ -5075,6 +5580,7 @@ class _ClusterDonutPainter extends CustomPainter {
   bool shouldRepaint(covariant _ClusterDonutPainter oldDelegate) {
     return oldDelegate.totalCount != totalCount ||
         oldDelegate.criticalCount != criticalCount ||
+        oldDelegate.normalCount != normalCount ||
         oldDelegate.uninspectedCount != uninspectedCount;
   }
 }
@@ -5352,6 +5858,24 @@ class _ItalicInfoPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_ItalicInfoPainter oldDelegate) => oldDelegate.color != color;
+}
+
+class _TowerCropInfo {
+  final double rawW;
+  final double rawH;
+  final double bx;
+  final double by;
+  final double bw;
+  final double bh;
+
+  const _TowerCropInfo({
+    required this.rawW,
+    required this.rawH,
+    required this.bx,
+    required this.by,
+    required this.bw,
+    required this.bh,
+  });
 }
 
 

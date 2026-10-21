@@ -37,12 +37,12 @@ class TowerCorridorService {
   static const String assetCsvPath = 'assets/data/tower_from_to.csv';
 
   static const String _defaultCsvContent = '''Tower,From,To
-135KV Tower 1,"Meramundali substation - Joragadia village, Anugul","132kV substation (unnamed) - Gundicha Pada village, Dhenkanal"
-135KV Tower 2,"Meramundali substation - Joragadia village, Anugul","132kV substation (unnamed) - Gundicha Pada village, Dhenkanal"
+135KV Tower 1,"Meramundali substation - Joragadia village, Anugul","Unnamed substation - Gundicha Pada village, Dhenkanal"
+135KV Tower 2,"Meramundali substation - Joragadia village, Anugul","Unnamed substation - Gundicha Pada village, Dhenkanal"
 220KV Tower 1 (Site A),"Meramundali substation - Joragadia village, Anugul","Bhanjanagar 220/132kV substation - Badapada village, Ganjam"
 220KV Tower 2 (Site A),"Meramundali substation - Joragadia village, Anugul","Bhanjanagar 220/132kV substation - Badapada village, Ganjam"
-220KV Tower 1 (Site B),"Meramundali substation - Joragadia village, Anugul","Splits at Ambapalas (Dhenkanal): Joda substation, Kendujhar / Duburi (Old) 220/132kV - Gobarghati village, Jajapur"
-220KV Tower 2 (Site B),"Meramundali substation - Joragadia village, Anugul","Splits at Ambapalas (Dhenkanal): Joda substation, Kendujhar / Duburi (Old) 220/132kV - Gobarghati village, Jajapur"
+220KV Tower 1 (Site B),"Meramundali substation - Joragadia village, Anugul","Duburi (Old) 220/132kV substation - Gobarghati village, Jajapur"
+220KV Tower 2 (Site B),"Meramundali substation - Joragadia village, Anugul","Duburi (Old) 220/132kV substation - Gobarghati village, Jajapur"
 400KV Tower 1 (Site A),"Meramundali substation - Joragadia village, Anugul","Duburi (New) 400/220kV substation - Chandia village, Jajapur"
 400KV Tower 2 (Site A),"Meramundali substation - Joragadia village, Anugul","Duburi (New) 400/220kV substation - Chandia village, Jajapur"
 400KV Tower 1 (Site B),"Meramundali substation - Joragadia village, Anugul","Mendhasal 400/220/132kV substation - Mendhadsal village, Khordha"
@@ -167,14 +167,14 @@ class TowerCorridorService {
     if (text.contains('Duburi (New)')) {
       return 'Duburi (New)';
     }
-    if (text.contains('Bhanjanagar')) {
+    if (text.contains('Duburi (Old)') || text.toLowerCase().contains('duburi(old)')) {
+      return 'Duburi (Old)';
+    }
+    if (text.contains('Bhanjanagar') || text.contains('Joda')) {
       return 'Bhanjanagar';
     }
-    if (text.contains('132kV') || text.contains('unnamed') || text.contains('Gundicha Pada')) {
-      return '132kV substation';
-    }
-    if (text.contains('Joda') || text.contains('Duburi (Old)')) {
-      return 'Joda / Duburi (Old)';
+    if (text.toLowerCase().contains('unnamed') || text.contains('Gundicha Pada') || text.contains('132kV')) {
+      return 'Unnamed';
     }
     if (text.contains('Meramundali')) {
       return 'Meramundali';

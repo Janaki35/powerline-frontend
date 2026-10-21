@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../config/app_theme.dart';
 import '../models/inspection_model.dart';
+import '../services/tower_registry.dart';
 
 class TowerSummaryDialog extends StatelessWidget {
   final Tower tower;
@@ -10,6 +11,23 @@ class TowerSummaryDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final summary = tower.summary;
+    final towerDef = TowerRegistry.getTower(tower.towerId);
+    final surveyDate = towerDef?.surveyDate ?? '28 Mar 2026';
+    final totalDefects = summary.componentCounts['cotter_pin_missing'] ?? 0;
+
+    int totalImages = 0;
+    for (final c in tower.circuits) {
+      for (final p in c.phases.values) {
+        totalImages += p.images.length;
+      }
+    }
+    if (totalImages == 0) {
+      totalImages = summary.componentCounts.values.fold(0, (a, b) => a + b);
+    }
+
+    final missingItemsText = summary.missingComponents.isNotEmpty
+        ? summary.missingComponents.map((e) => e.replaceAll('_', ' ')).join(', ')
+        : 'None';
 
     return Dialog(
       backgroundColor: Colors.white,
@@ -39,7 +57,7 @@ class TowerSummaryDialog extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '${tower.towerName} · Inspection Date: 28 Mar 2026',
+                      '${tower.towerName} · Inspection Date: $surveyDate',
                       style: const TextStyle(
                         fontSize: 12,
                         color: AppColors.textMuted,
@@ -63,57 +81,109 @@ class TowerSummaryDialog extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Critical Alert Box
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: AppColors.criticalRedLight,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: AppColors.criticalRed.withValues(alpha: 0.3),
+                    // Status Alert Box (Critical Red or Normal Green)
+                    if (totalDefects > 0)
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: AppColors.criticalRedLight,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: AppColors.criticalRed.withValues(alpha: 0.3),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: const BoxDecoration(
+                                color: AppColors.criticalRed,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.warning_amber_rounded,
+                                color: Colors.white,
+                                size: 24,
+                              ),
+                            ),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    '$totalDefects Critical Deficiencies Identified',
+                                    style: const TextStyle(
+                                      color: AppColors.criticalRed,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'All $totalDefects issues: "Cotter pin missing (Critical)". Requires prompt line crew remediation before conductor attachment hardware weakens.',
+                                    style: const TextStyle(
+                                      color: Color(0xFF991B1B),
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    else
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF0FDF4),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: const Color(0xFF86EFAC),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: const BoxDecoration(
+                                color: Color(0xFF16A34A),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.check_circle_outline,
+                                color: Colors.white,
+                                size: 24,
+                              ),
+                            ),
+                            const SizedBox(width: 14),
+                            const Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Normal Operational Condition (0 Defects)',
+                                    style: TextStyle(
+                                      color: Color(0xFF16A34A),
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  SizedBox(height: 4),
+                                  Text(
+                                    'All components and structural members inspected within standard operational limits. No missing cotter pins detected.',
+                                    style: TextStyle(
+                                      color: Color(0xFF166534),
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: const BoxDecoration(
-                              color: AppColors.criticalRed,
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(
-                              Icons.warning_amber_rounded,
-                              color: Colors.white,
-                              size: 24,
-                            ),
-                          ),
-                          const SizedBox(width: 14),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: const [
-                                Text(
-                                  '9 Critical Deficiencies Identified',
-                                  style: TextStyle(
-                                    color: AppColors.criticalRed,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                SizedBox(height: 4),
-                                Text(
-                                  'All 9 issues: "Cotter pin missing (Critical)". Requires prompt line crew remediation before conductor attachment hardware weakens.',
-                                  style: TextStyle(
-                                    color: Color(0xFF991B1B),
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
                     const SizedBox(height: 20),
 
                     // Quick Telemetry stats
@@ -127,15 +197,15 @@ class TowerSummaryDialog extends StatelessWidget {
                                 children: [
                                   _buildStatCard('Circuits', '${summary.circuitCount}', Icons.electrical_services),
                                   const SizedBox(width: 10),
-                                  _buildStatCard('Images Inspected', '65', Icons.photo_library_outlined),
+                                  _buildStatCard('Images Inspected', '$totalImages', Icons.photo_library_outlined),
                                 ],
                               ),
                               const SizedBox(height: 10),
                               Row(
                                 children: [
-                                  _buildStatCard('Missing Items', 'Jumper cable', Icons.remove_circle_outline),
+                                  _buildStatCard('Missing Items', missingItemsText, Icons.remove_circle_outline),
                                   const SizedBox(width: 10),
-                                  _buildStatCard('Altitude', '${tower.location.altitudeM} m', Icons.terrain_outlined),
+                                  _buildStatCard('Altitude', '${tower.location.altitudeM.toStringAsFixed(1)} m', Icons.terrain_outlined),
                                 ],
                               ),
                             ],
@@ -145,11 +215,11 @@ class TowerSummaryDialog extends StatelessWidget {
                           children: [
                             _buildStatCard('Circuits', '${summary.circuitCount}', Icons.electrical_services),
                             const SizedBox(width: 12),
-                            _buildStatCard('Images Inspected', '65', Icons.photo_library_outlined),
+                            _buildStatCard('Images Inspected', '$totalImages', Icons.photo_library_outlined),
                             const SizedBox(width: 12),
-                            _buildStatCard('Missing Items', 'Jumper cable', Icons.remove_circle_outline),
+                            _buildStatCard('Missing Items', missingItemsText, Icons.remove_circle_outline),
                             const SizedBox(width: 12),
-                            _buildStatCard('Altitude', '${tower.location.altitudeM} m', Icons.terrain_outlined),
+                            _buildStatCard('Altitude', '${tower.location.altitudeM.toStringAsFixed(1)} m', Icons.terrain_outlined),
                           ],
                         );
                       },
@@ -166,12 +236,18 @@ class TowerSummaryDialog extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 10),
-                    _buildPhaseRow('Circuit_SW - Phase R', '3 issues (Cotter pin missing)', AppColors.criticalRed, true),
-                    _buildPhaseRow('Circuit_SW - Phase Y', 'No defects detected', AppColors.normalGreen, false),
-                    _buildPhaseRow('Circuit_SW - Phase B', '4 issues (Cotter pin missing)', AppColors.criticalRed, true),
-                    _buildPhaseRow('Circuit_NE - Phase R', '1 issue (Cotter pin missing)', AppColors.criticalRed, true),
-                    _buildPhaseRow('Circuit_NE - Phase Y', '1 issue (Cotter pin missing)', AppColors.criticalRed, true),
-                    _buildPhaseRow('Circuit_NE - Phase B', 'No defects detected', AppColors.normalGreen, false),
+                    ...tower.circuits.expand((c) => c.phases.entries.map((entry) {
+                          final p = entry.value;
+                          final isCrit = p.defectCount > 0;
+                          return _buildPhaseRow(
+                            '${c.circuitId} - Phase ${entry.key}',
+                            isCrit
+                                ? '${p.defectCount} issue${p.defectCount > 1 ? 's' : ''} (Cotter pin missing)'
+                                : 'No defects detected',
+                            isCrit ? AppColors.criticalRed : AppColors.normalGreen,
+                            isCrit,
+                          );
+                        })),
 
                     const SizedBox(height: 24),
 

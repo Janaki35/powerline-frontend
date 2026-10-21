@@ -81,10 +81,28 @@ class ImageService {
       return AssetImage(rawPath.startsWith('assets/') ? rawPath : clean);
     }
 
-    // 2. Check for bundled base tower overview image for deployment reliability
-    if (clean.endsWith(AppConfig.baseTowerImageFilename) ||
-        clean.contains('DJI_20260328161505_0088_S_seg01_frame_01180.jpg')) {
-      return const AssetImage(AppConfig.baseTowerImageAsset);
+    // 2. Check for bundled base tower overview images for deployment reliability
+    const towerBaseAssets = {
+      'DJI_20260328161505_0088_S_seg01_frame_01180.jpg':
+          'assets/images/DJI_20260328161505_0088_S_seg01_frame_01180.jpg',
+      '135_t1.jpg': 'assets/images/135_t1.jpg',
+      'frame_00969.jpg': 'assets/images/135_t1.jpg',
+      '135t2.jpg': 'assets/images/135t2.jpg',
+      'frame_00063.jpg': 'assets/images/135t2.jpg',
+      '220t1sa.jpg': 'assets/images/220t1sa.jpg',
+      'frame_00506.jpg': 'assets/images/220t1sa.jpg',
+      '220t2sa.jpg': 'assets/images/220t2sa.jpg',
+      'frame_00946.jpg': 'assets/images/220t2sa.jpg',
+      '220t1sb.jpg': 'assets/images/220t1sb.jpg',
+      'frame_01342.jpg': 'assets/images/220t1sb.jpg',
+      '220t2sb.jpg': 'assets/images/220t2sb.jpg',
+      'frame_00138.jpg': 'assets/images/220t2sb.jpg',
+    };
+
+    for (final entry in towerBaseAssets.entries) {
+      if (clean.endsWith(entry.key) || clean.contains(entry.key)) {
+        return AssetImage(entry.value);
+      }
     }
 
     // 3. Fallback to platform-specific provider (local file on desktop, HTTP on web)
@@ -99,6 +117,7 @@ class ImageService {
     double? width,
     double? height,
     Alignment alignment = Alignment.center,
+    FilterQuality filterQuality = FilterQuality.medium,
   }) {
     return Image(
       image: getImageProvider(imagePath),
@@ -106,6 +125,7 @@ class ImageService {
       width: width,
       height: height,
       alignment: alignment,
+      filterQuality: filterQuality,
       loadingBuilder: (context, child, progress) {
         if (progress == null) return child;
         final total = progress.expectedTotalBytes;

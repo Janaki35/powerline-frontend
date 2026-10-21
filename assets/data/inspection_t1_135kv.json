@@ -1,0 +1,2455 @@
+{
+  "inspection_id": "INSP_135KV_Tower_1_20260329T114058",
+  "tower": {
+    "tower_id": "135KV_Tower_1",
+    "tower_name": "135KV Tower 1",
+    "tower_location": {
+      "latitude": 20.8258324,
+      "longitude": 85.2636364,
+      "altitude_m": 66.332
+    },
+    "tower_detection": {
+      "confidence": 0.909,
+      "bbox": [
+        794.3,
+        28.7,
+        322.2,
+        992.3
+      ],
+      "image_path": "corrected_earth_peak/135KV_Tower_1/images/frame_00969.jpg",
+      "image_url": "",
+      "image_width": 1920,
+      "image_height": 1080,
+      "video_id": "DJI_20260329113911_0055_Z_f02245-03449",
+      "frame_number": 969,
+      "timestamp": "00:00:32.332",
+      "telemetry": {
+        "captured_at": "2026-03-29T11:40:58.240",
+        "metadata_source": "djmd",
+        "location": {
+          "latitude": 20.8257388,
+          "longitude": 85.2624324,
+          "absolute_altitude_m": 118.946,
+          "relative_altitude_m": null
+        },
+        "gimbal": {
+          "yaw_deg": 84.3,
+          "pitch_deg": -33.5,
+          "roll_deg": null
+        },
+        "flight": {
+          "yaw_deg": 83.3,
+          "pitch_deg": 10.8,
+          "roll_deg": -3.7
+        }
+      }
+    },
+    "summary": {
+      "circuit_count": 1,
+      "component_detection_status": "completed",
+      "detection_counts": {
+        "tower": 1,
+        "circuit": 1,
+        "components": {
+          "arcing_horn": 12,
+          "conductor": 27,
+          "corona_ring": 0,
+          "cotter_pin": 0,
+          "cotter_pin_missing": 0,
+          "earthing_wire": 3,
+          "insulator": 33,
+          "jumper_cable": 32,
+          "pg_clamp": 1,
+          "vibration_damper": 25
+        }
+      },
+      "missing_components": [
+        "corona_ring",
+        "cotter_pin",
+        "cotter_pin_missing"
+      ]
+    },
+    "earth_peaks": [
+      {
+        "earth_peak_id": "EarthPeak_Top",
+        "side": "Top",
+        "keypoint": {
+          "x": 960.0,
+          "y": 31.0,
+          "confidence": null
+        },
+        "location": {
+          "latitude": 20.8258419,
+          "longitude": 85.2636528,
+          "absolute_altitude_m": 61.95,
+          "source": "median rangefinder hit of the earth-peak images (altitude in the drone absolute datum)",
+          "measured_by": 2
+        },
+        "images": [
+          {
+            "image_id": "IMG_EP_Top_001",
+            "image_path": "https://powerlinee.s3.ap-south-1.amazonaws.com/data/RAW/135KV_Tower_1/image/DJI_20260329112948_0013_Z.JPG",
+            "image_url": "",
+            "image_width": 5184,
+            "image_height": 3888,
+            "distance_to_tower_m": 32.662,
+            "telemetry": {
+              "captured_at": "2026-03-29T11:29:48",
+              "metadata_source": "xmp",
+              "location": {
+                "latitude": 20.8256827,
+                "longitude": 85.2634551,
+                "absolute_altitude_m": 80.376,
+                "relative_altitude_m": 66.159
+              },
+              "gimbal": {
+                "yaw_deg": 48.6,
+                "pitch_deg": -34.4,
+                "roll_deg": 0.0
+              },
+              "flight": {
+                "yaw_deg": 48.9,
+                "pitch_deg": 0.0,
+                "roll_deg": -0.4
+              }
+            },
+            "source": {
+              "video_id": null,
+              "frame_number": null,
+              "timestamp": null
+            },
+            "component_detections": {
+              "arcing_horn": [],
+              "conductor": [
+                {
+                  "detection_id": "COND_001",
+                  "confidence": null,
+                  "bbox": [
+                    0,
+                    1622.3,
+                    2753.6,
+                    361.7
+                  ],
+                  "status": "normal",
+                  "defect": null
+                },
+                {
+                  "detection_id": "COND_002",
+                  "confidence": null,
+                  "bbox": [
+                    2808.2,
+                    1634.2,
+                    2375.8,
+                    309.8
+                  ],
+                  "status": "normal",
+                  "defect": null
+                }
+              ],
+              "corona_ring": [],
+              "cotter_pin": [],
+              "cotter_pin_missing": [],
+              "earthing_wire": [
+                {
+                  "detection_id": "EW_001",
+                  "confidence": null,
+                  "bbox": [
+                    2300,
+                    1168,
+                    588,
+                    588
+                  ],
+                  "status": "not_assessed",
+                  "defect": null
+                }
+              ],
+              "insulator": [],
+              "jumper_cable": [],
+              "pg_clamp": [
+                {
+                  "detection_id": "PGC_001",
+                  "confidence": null,
+                  "bbox": [
+                    2752,
+                    1680,
+                    76,
+                    72
+                  ],
+                  "status": "not_assessed",
+                  "defect": null
+                }
+              ],
+              "vibration_damper": [
+                {
+                  "detection_id": "VD_001",
+                  "confidence": null,
+                  "bbox": [
+                    412,
+                    1852,
+                    364,
+                    128
+                  ],
+                  "status": "not_assessed",
+                  "defect": null
+                },
+                {
+                  "detection_id": "VD_002",
+                  "confidence": null,
+                  "bbox": [
+                    4416,
+                    1824,
+                    380,
+                    148
+                  ],
+                  "status": "not_assessed",
+                  "defect": null
+                }
+              ]
+            }
+          },
+          {
+            "image_id": "IMG_EP_Top_002",
+            "image_path": "https://powerlinee.s3.ap-south-1.amazonaws.com/data/RAW/135KV_Tower_1/image/DJI_20260329113019_0014_Z.JPG",
+            "image_url": "",
+            "image_width": 5184,
+            "image_height": 3888,
+            "distance_to_tower_m": 36.343,
+            "telemetry": {
+              "captured_at": "2026-03-29T11:30:19",
+              "metadata_source": "xmp",
+              "location": {
+                "latitude": 20.8260152,
+                "longitude": 85.2638754,
+                "absolute_altitude_m": 82.595,
+                "relative_altitude_m": 68.379
+              },
+              "gimbal": {
+                "yaw_deg": -129.9,
+                "pitch_deg": -34.4,
+                "roll_deg": 0.0
+              },
+              "flight": {
+                "yaw_deg": -130.2,
+                "pitch_deg": 0.8,
+                "roll_deg": 1.7
+              }
+            },
+            "source": {
+              "video_id": null,
+              "frame_number": null,
+              "timestamp": null
+            },
+            "component_detections": {
+              "arcing_horn": [],
+              "conductor": [
+                {
+                  "detection_id": "COND_003",
+                  "confidence": null,
+                  "bbox": [
+                    0,
+                    1924,
+                    2072,
+                    228
+                  ],
+                  "status": "normal",
+                  "defect": null
+                },
+                {
+                  "detection_id": "COND_004",
+                  "confidence": null,
+                  "bbox": [
+                    3232,
+                    1912,
+                    1952,
+                    192
+                  ],
+                  "status": "normal",
+                  "defect": null
+                }
+              ],
+              "corona_ring": [],
+              "cotter_pin": [],
+              "cotter_pin_missing": [],
+              "earthing_wire": [
+                {
+                  "detection_id": "EW_002",
+                  "confidence": null,
+                  "bbox": [
+                    2520,
+                    1448,
+                    376,
+                    572
+                  ],
+                  "status": "not_assessed",
+                  "defect": null
+                }
+              ],
+              "insulator": [],
+              "jumper_cable": [],
+              "pg_clamp": [],
+              "vibration_damper": [
+                {
+                  "detection_id": "VD_003",
+                  "confidence": null,
+                  "bbox": [
+                    660,
+                    2044,
+                    320,
+                    104
+                  ],
+                  "status": "not_assessed",
+                  "defect": null
+                },
+                {
+                  "detection_id": "VD_004",
+                  "confidence": null,
+                  "bbox": [
+                    4232,
+                    2004,
+                    332,
+                    128
+                  ],
+                  "status": "not_assessed",
+                  "defect": null
+                }
+              ]
+            }
+          }
+        ]
+      }
+    ],
+    "circuits": [
+      {
+        "circuit_id": "Circuit_SW",
+        "circuit_detection": {
+          "confidence": 0.934,
+          "bbox": [
+            854.8,
+            163.3,
+            229.5,
+            226.8
+          ]
+        },
+        "phases": {
+          "R": {
+            "keypoint": {
+              "x": 879.4,
+              "y": 171.2,
+              "confidence": 1.0
+            },
+            "images": [
+              {
+                "image_id": "IMG_C1_R_001",
+                "image_path": "https://powerlinee.s3.ap-south-1.amazonaws.com/data/RAW/135KV_Tower_1/image/DJI_20260329113046_0016_Z.JPG",
+                "image_url": "",
+                "image_width": 5184,
+                "image_height": 3888,
+                "distance_to_tower_m": 32.3,
+                "telemetry": {
+                  "captured_at": "2026-03-29T11:30:46",
+                  "metadata_source": "xmp",
+                  "location": {
+                    "latitude": 20.8260329,
+                    "longitude": 85.2638613,
+                    "absolute_altitude_m": 69.94,
+                    "relative_altitude_m": 55.724
+                  },
+                  "gimbal": {
+                    "yaw_deg": -130.5,
+                    "pitch_deg": -34.4,
+                    "roll_deg": 0.0
+                  },
+                  "flight": {
+                    "yaw_deg": -130.4,
+                    "pitch_deg": 1.9,
+                    "roll_deg": 2.7
+                  }
+                },
+                "source": {
+                  "video_id": null,
+                  "frame_number": null,
+                  "timestamp": null
+                },
+                "component_detections": {
+                  "arcing_horn": [
+                    {
+                      "detection_id": "AH_001",
+                      "confidence": null,
+                      "bbox": [
+                        3204,
+                        0,
+                        64,
+                        200
+                      ],
+                      "status": "not_assessed",
+                      "defect": null
+                    },
+                    {
+                      "detection_id": "AH_002",
+                      "confidence": null,
+                      "bbox": [
+                        2300,
+                        1640,
+                        88,
+                        392
+                      ],
+                      "status": "not_assessed",
+                      "defect": null
+                    }
+                  ],
+                  "conductor": [
+                    {
+                      "detection_id": "COND_005",
+                      "confidence": null,
+                      "bbox": [
+                        3296,
+                        156,
+                        1888,
+                        84
+                      ],
+                      "status": "normal",
+                      "defect": null
+                    },
+                    {
+                      "detection_id": "COND_006",
+                      "confidence": null,
+                      "bbox": [
+                        2452,
+                        1992,
+                        2732,
+                        340
+                      ],
+                      "status": "normal",
+                      "defect": null
+                    }
+                  ],
+                  "corona_ring": [],
+                  "cotter_pin": [],
+                  "cotter_pin_missing": [],
+                  "earthing_wire": [],
+                  "insulator": [
+                    {
+                      "detection_id": "INS_001",
+                      "confidence": null,
+                      "bbox": [
+                        1980,
+                        0,
+                        1240,
+                        288
+                      ],
+                      "status": "normal",
+                      "defect": null
+                    },
+                    {
+                      "detection_id": "INS_002",
+                      "confidence": null,
+                      "bbox": [
+                        620,
+                        1572,
+                        1704,
+                        556
+                      ],
+                      "status": "normal",
+                      "defect": null
+                    }
+                  ],
+                  "jumper_cable": [
+                    {
+                      "detection_id": "JC_001",
+                      "confidence": null,
+                      "bbox": [
+                        0,
+                        232,
+                        3340,
+                        1856
+                      ],
+                      "status": "normal",
+                      "defect": null
+                    },
+                    {
+                      "detection_id": "JC_002",
+                      "confidence": null,
+                      "bbox": [
+                        0,
+                        196,
+                        3808,
+                        1884
+                      ],
+                      "status": "normal",
+                      "defect": null
+                    },
+                    {
+                      "detection_id": "JC_003",
+                      "confidence": null,
+                      "bbox": [
+                        0,
+                        2056,
+                        2476,
+                        1484
+                      ],
+                      "status": "normal",
+                      "defect": null
+                    },
+                    {
+                      "detection_id": "JC_004",
+                      "confidence": null,
+                      "bbox": [
+                        0,
+                        2084,
+                        3140,
+                        1488
+                      ],
+                      "status": "normal",
+                      "defect": null
+                    }
+                  ],
+                  "pg_clamp": [],
+                  "vibration_damper": [
+                    {
+                      "detection_id": "VD_005",
+                      "confidence": null,
+                      "bbox": [
+                        4196,
+                        200,
+                        356,
+                        92
+                      ],
+                      "status": "not_assessed",
+                      "defect": null
+                    },
+                    {
+                      "detection_id": "VD_006",
+                      "confidence": null,
+                      "bbox": [
+                        3952,
+                        2176,
+                        484,
+                        128
+                      ],
+                      "status": "not_assessed",
+                      "defect": null
+                    }
+                  ]
+                }
+              },
+              {
+                "image_id": "IMG_C1_R_002",
+                "image_path": "https://powerlinee.s3.ap-south-1.amazonaws.com/data/RAW/135KV_Tower_1/image/DJI_20260329113105_0017_Z.JPG",
+                "image_url": "",
+                "image_width": 5184,
+                "image_height": 3888,
+                "distance_to_tower_m": 32.6,
+                "telemetry": {
+                  "captured_at": "2026-03-29T11:31:05",
+                  "metadata_source": "xmp",
+                  "location": {
+                    "latitude": 20.8260063,
+                    "longitude": 85.2638891,
+                    "absolute_altitude_m": 69.955,
+                    "relative_altitude_m": 55.738
+                  },
+                  "gimbal": {
+                    "yaw_deg": -130.5,
+                    "pitch_deg": -34.4,
+                    "roll_deg": 0.0
+                  },
+                  "flight": {
+                    "yaw_deg": -130.6,
+                    "pitch_deg": 1.0,
+                    "roll_deg": 3.4
+                  }
+                },
+                "source": {
+                  "video_id": null,
+                  "frame_number": null,
+                  "timestamp": null
+                },
+                "component_detections": {
+                  "arcing_horn": [
+                    {
+                      "detection_id": "AH_003",
+                      "confidence": null,
+                      "bbox": [
+                        2732,
+                        1672,
+                        172,
+                        256
+                      ],
+                      "status": "not_assessed",
+                      "defect": null
+                    }
+                  ],
+                  "conductor": [
+                    {
+                      "detection_id": "COND_007",
+                      "confidence": null,
+                      "bbox": [
+                        0,
+                        884,
+                        1780,
+                        196
+                      ],
+                      "status": "normal",
+                      "defect": null
+                    },
+                    {
+                      "detection_id": "COND_008",
+                      "confidence": null,
+                      "bbox": [
+                        0,
+                        1932,
+                        2688,
+                        260
+                      ],
+                      "status": "normal",
+                      "defect": null
+                    }
+                  ],
+                  "corona_ring": [],
+                  "cotter_pin": [],
+                  "cotter_pin_missing": [],
+                  "earthing_wire": [],
+                  "insulator": [
+                    {
+                      "detection_id": "INS_003",
+                      "confidence": null,
+                      "bbox": [
+                        1844,
+                        632,
+                        884,
+                        264
+                      ],
+                      "status": "normal",
+                      "defect": null
+                    },
+                    {
+                      "detection_id": "INS_004",
+                      "confidence": null,
+                      "bbox": [
+                        1832,
+                        736,
+                        908,
+                        280
+                      ],
+                      "status": "normal",
+                      "defect": null
+                    },
+                    {
+                      "detection_id": "INS_005",
+                      "confidence": null,
+                      "bbox": [
+                        2804,
+                        1600,
+                        1200,
+                        344
+                      ],
+                      "status": "normal",
+                      "defect": null
+                    },
+                    {
+                      "detection_id": "INS_006",
+                      "confidence": null,
+                      "bbox": [
+                        2788,
+                        1764,
+                        1236,
+                        360
+                      ],
+                      "status": "normal",
+                      "defect": null
+                    },
+                    {
+                      "detection_id": "INS_007",
+                      "confidence": null,
+                      "bbox": [
+                        4968,
+                        584,
+                        216,
+                        184
+                      ],
+                      "status": "normal",
+                      "defect": null
+                    },
+                    {
+                      "detection_id": "INS_008",
+                      "confidence": null,
+                      "bbox": [
+                        4660,
+                        1668,
+                        524,
+                        324
+                      ],
+                      "status": "normal",
+                      "defect": null
+                    }
+                  ],
+                  "jumper_cable": [
+                    {
+                      "detection_id": "JC_005",
+                      "confidence": null,
+                      "bbox": [
+                        1376,
+                        936,
+                        1420,
+                        992
+                      ],
+                      "status": "normal",
+                      "defect": null
+                    },
+                    {
+                      "detection_id": "JC_006",
+                      "confidence": null,
+                      "bbox": [
+                        1760,
+                        928,
+                        1052,
+                        926
+                      ],
+                      "status": "normal",
+                      "defect": null
+                    },
+                    {
+                      "detection_id": "JC_007",
+                      "confidence": null,
+                      "bbox": [
+                        2168,
+                        2004,
+                        3016,
+                        1072
+                      ],
+                      "status": "normal",
+                      "defect": null
+                    },
+                    {
+                      "detection_id": "JC_008",
+                      "confidence": null,
+                      "bbox": [
+                        2668,
+                        2024,
+                        2516,
+                        1056
+                      ],
+                      "status": "normal",
+                      "defect": null
+                    }
+                  ],
+                  "pg_clamp": [],
+                  "vibration_damper": [
+                    {
+                      "detection_id": "VD_007",
+                      "confidence": null,
+                      "bbox": [
+                        856,
+                        964,
+                        252,
+                        76
+                      ],
+                      "status": "not_assessed",
+                      "defect": null
+                    },
+                    {
+                      "detection_id": "VD_008",
+                      "confidence": null,
+                      "bbox": [
+                        1124,
+                        2052,
+                        356,
+                        116
+                      ],
+                      "status": "not_assessed",
+                      "defect": null
+                    }
+                  ]
+                }
+              },
+              {
+                "image_id": "IMG_C1_R_003",
+                "image_path": "https://powerlinee.s3.ap-south-1.amazonaws.com/data/RAW/135KV_Tower_1/image/DJI_20260329113112_0018_Z.JPG",
+                "image_url": "",
+                "image_width": 5184,
+                "image_height": 3888,
+                "distance_to_tower_m": 32.869,
+                "telemetry": {
+                  "captured_at": "2026-03-29T11:31:12",
+                  "metadata_source": "xmp",
+                  "location": {
+                    "latitude": 20.8260155,
+                    "longitude": 85.2638797,
+                    "absolute_altitude_m": 66.332,
+                    "relative_altitude_m": 52.116
+                  },
+                  "gimbal": {
+                    "yaw_deg": -130.5,
+                    "pitch_deg": -34.4,
+                    "roll_deg": 0.0
+                  },
+                  "flight": {
+                    "yaw_deg": -130.4,
+                    "pitch_deg": 1.2,
+                    "roll_deg": 1.8
+                  }
+                },
+                "source": {
+                  "video_id": null,
+                  "frame_number": null,
+                  "timestamp": null
+                },
+                "component_detections": {
+                  "arcing_horn": [
+                    {
+                      "detection_id": "AH_004",
+                      "confidence": null,
+                      "bbox": [
+                        4156,
+                        0,
+                        60,
+                        192
+                      ],
+                      "status": "not_assessed",
+                      "defect": null
+                    }
+                  ],
+                  "conductor": [
+                    {
+                      "detection_id": "COND_009",
+                      "confidence": null,
+                      "bbox": [
+                        0,
+                        160,
+                        1816,
+                        160
+                      ],
+                      "status": "normal",
+                      "defect": null
+                    },
+                    {
+                      "detection_id": "COND_010",
+                      "confidence": null,
+                      "bbox": [
+                        4224,
+                        176,
+                        960,
+                        144
+                      ],
+                      "status": "normal",
+                      "defect": null
+                    },
+                    {
+                      "detection_id": "COND_011",
+                      "confidence": null,
+                      "bbox": [
+                        0,
+                        0,
+                        440,
+                        40
+                      ],
+                      "status": "normal",
+                      "defect": null
+                    }
+                  ],
+                  "corona_ring": [],
+                  "cotter_pin": [],
+                  "cotter_pin_missing": [],
+                  "earthing_wire": [],
+                  "insulator": [
+                    {
+                      "detection_id": "INS_009",
+                      "confidence": null,
+                      "bbox": [
+                        1872,
+                        0,
+                        880,
+                        184
+                      ],
+                      "status": "normal",
+                      "defect": null
+                    },
+                    {
+                      "detection_id": "INS_010",
+                      "confidence": null,
+                      "bbox": [
+                        1876,
+                        24,
+                        968,
+                        264
+                      ],
+                      "status": "normal",
+                      "defect": null
+                    },
+                    {
+                      "detection_id": "INS_011",
+                      "confidence": null,
+                      "bbox": [
+                        3220,
+                        0,
+                        964,
+                        264
+                      ],
+                      "status": "normal",
+                      "defect": null
+                    }
+                  ],
+                  "jumper_cable": [
+                    {
+                      "detection_id": "JC_009",
+                      "confidence": null,
+                      "bbox": [
+                        1364,
+                        0,
+                        2696,
+                        868
+                      ],
+                      "status": "normal",
+                      "defect": null
+                    },
+                    {
+                      "detection_id": "JC_010",
+                      "confidence": null,
+                      "bbox": [
+                        1268,
+                        0,
+                        2788,
+                        852.1
+                      ],
+                      "status": "normal",
+                      "defect": null
+                    },
+                    {
+                      "detection_id": "JC_011",
+                      "confidence": null,
+                      "bbox": [
+                        1388,
+                        216,
+                        3192,
+                        888
+                      ],
+                      "status": "normal",
+                      "defect": null
+                    },
+                    {
+                      "detection_id": "JC_012",
+                      "confidence": null,
+                      "bbox": [
+                        1776,
+                        216,
+                        2472,
+                        880
+                      ],
+                      "status": "normal",
+                      "defect": null
+                    }
+                  ],
+                  "pg_clamp": [],
+                  "vibration_damper": [
+                    {
+                      "detection_id": "VD_009",
+                      "confidence": null,
+                      "bbox": [
+                        600,
+                        248,
+                        264,
+                        80
+                      ],
+                      "status": "not_assessed",
+                      "defect": null
+                    },
+                    {
+                      "detection_id": "VD_010",
+                      "confidence": null,
+                      "bbox": [
+                        5044,
+                        288,
+                        140,
+                        68
+                      ],
+                      "status": "not_assessed",
+                      "defect": null
+                    },
+                    {
+                      "detection_id": "VD_011",
+                      "confidence": null,
+                      "bbox": [
+                        680,
+                        0,
+                        80,
+                        20
+                      ],
+                      "status": "not_assessed",
+                      "defect": null
+                    }
+                  ]
+                }
+              },
+              {
+                "image_id": "IMG_C1_R_004",
+                "image_path": "https://powerlinee.s3.ap-south-1.amazonaws.com/data/RAW/135KV_Tower_1/image/DJI_20260329113118_0019_Z.JPG",
+                "image_url": "",
+                "image_width": 5184,
+                "image_height": 3888,
+                "distance_to_tower_m": 37.381,
+                "telemetry": {
+                  "captured_at": "2026-03-29T11:31:18",
+                  "metadata_source": "xmp",
+                  "location": {
+                    "latitude": 20.8260199,
+                    "longitude": 85.263877,
+                    "absolute_altitude_m": 68.587,
+                    "relative_altitude_m": 54.37
+                  },
+                  "gimbal": {
+                    "yaw_deg": -130.5,
+                    "pitch_deg": -34.4,
+                    "roll_deg": 0.0
+                  },
+                  "flight": {
+                    "yaw_deg": -130.9,
+                    "pitch_deg": 1.1,
+                    "roll_deg": 0.1
+                  }
+                },
+                "source": {
+                  "video_id": null,
+                  "frame_number": null,
+                  "timestamp": null
+                },
+                "component_detections": {
+                  "arcing_horn": [
+                    {
+                      "detection_id": "AH_005",
+                      "confidence": null,
+                      "bbox": [
+                        3632,
+                        612,
+                        64,
+                        132
+                      ],
+                      "status": "not_assessed",
+                      "defect": null
+                    },
+                    {
+                      "detection_id": "AH_006",
+                      "confidence": null,
+                      "bbox": [
+                        1620,
+                        1168,
+                        92,
+                        172
+                      ],
+                      "status": "not_assessed",
+                      "defect": null
+                    },
+                    {
+                      "detection_id": "AH_007",
+                      "confidence": null,
+                      "bbox": [
+                        3584,
+                        1200,
+                        40,
+                        180
+                      ],
+                      "status": "not_assessed",
+                      "defect": null
+                    }
+                  ],
+                  "conductor": [
+                    {
+                      "detection_id": "COND_012",
+                      "confidence": null,
+                      "bbox": [
+                        0,
+                        828,
+                        1316,
+                        148
+                      ],
+                      "status": "normal",
+                      "defect": null
+                    },
+                    {
+                      "detection_id": "COND_013",
+                      "confidence": null,
+                      "bbox": [
+                        3676,
+                        716,
+                        1508,
+                        80
+                      ],
+                      "status": "normal",
+                      "defect": null
+                    },
+                    {
+                      "detection_id": "COND_014",
+                      "confidence": null,
+                      "bbox": [
+                        0,
+                        1352,
+                        1600,
+                        148
+                      ],
+                      "status": "normal",
+                      "defect": null
+                    },
+                    {
+                      "detection_id": "COND_015",
+                      "confidence": null,
+                      "bbox": [
+                        3632,
+                        1368,
+                        1552,
+                        172
+                      ],
+                      "status": "normal",
+                      "defect": null
+                    }
+                  ],
+                  "corona_ring": [],
+                  "cotter_pin": [],
+                  "cotter_pin_missing": [],
+                  "earthing_wire": [],
+                  "insulator": [
+                    {
+                      "detection_id": "INS_012",
+                      "confidence": null,
+                      "bbox": [
+                        1316,
+                        676,
+                        616,
+                        168
+                      ],
+                      "status": "normal",
+                      "defect": null
+                    },
+                    {
+                      "detection_id": "INS_013",
+                      "confidence": null,
+                      "bbox": [
+                        1324,
+                        760,
+                        600,
+                        164
+                      ],
+                      "status": "normal",
+                      "defect": null
+                    },
+                    {
+                      "detection_id": "INS_014",
+                      "confidence": null,
+                      "bbox": [
+                        3168,
+                        632,
+                        480,
+                        160
+                      ],
+                      "status": "normal",
+                      "defect": null
+                    },
+                    {
+                      "detection_id": "INS_015",
+                      "confidence": null,
+                      "bbox": [
+                        1656,
+                        1136,
+                        792,
+                        200
+                      ],
+                      "status": "normal",
+                      "defect": null
+                    },
+                    {
+                      "detection_id": "INS_016",
+                      "confidence": null,
+                      "bbox": [
+                        1636,
+                        1244,
+                        816,
+                        220
+                      ],
+                      "status": "normal",
+                      "defect": null
+                    },
+                    {
+                      "detection_id": "INS_017",
+                      "confidence": null,
+                      "bbox": [
+                        2840,
+                        1172,
+                        748,
+                        264
+                      ],
+                      "status": "normal",
+                      "defect": null
+                    }
+                  ],
+                  "jumper_cable": [
+                    {
+                      "detection_id": "JC_013",
+                      "confidence": null,
+                      "bbox": [
+                        1056,
+                        745.8,
+                        2876,
+                        835.1
+                      ],
+                      "status": "normal",
+                      "defect": null
+                    },
+                    {
+                      "detection_id": "JC_014",
+                      "confidence": null,
+                      "bbox": [
+                        1292,
+                        744.7,
+                        2427.3,
+                        838.9
+                      ],
+                      "status": "normal",
+                      "defect": null
+                    },
+                    {
+                      "detection_id": "JC_015",
+                      "confidence": null,
+                      "bbox": [
+                        1248,
+                        1396,
+                        2696,
+                        700
+                      ],
+                      "status": "normal",
+                      "defect": null
+                    },
+                    {
+                      "detection_id": "JC_016",
+                      "confidence": null,
+                      "bbox": [
+                        1568,
+                        1392,
+                        2084,
+                        704
+                      ],
+                      "status": "normal",
+                      "defect": null
+                    }
+                  ],
+                  "pg_clamp": [],
+                  "vibration_damper": [
+                    {
+                      "detection_id": "VD_012",
+                      "confidence": null,
+                      "bbox": [
+                        696,
+                        884,
+                        164,
+                        48
+                      ],
+                      "status": "not_assessed",
+                      "defect": null
+                    },
+                    {
+                      "detection_id": "VD_013",
+                      "confidence": null,
+                      "bbox": [
+                        4116,
+                        736,
+                        152,
+                        56
+                      ],
+                      "status": "not_assessed",
+                      "defect": null
+                    },
+                    {
+                      "detection_id": "VD_014",
+                      "confidence": null,
+                      "bbox": [
+                        552,
+                        1412,
+                        236,
+                        80
+                      ],
+                      "status": "not_assessed",
+                      "defect": null
+                    },
+                    {
+                      "detection_id": "VD_015",
+                      "confidence": null,
+                      "bbox": [
+                        4320,
+                        1444,
+                        228,
+                        76
+                      ],
+                      "status": "not_assessed",
+                      "defect": null
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          "Y": {
+            "keypoint": {
+              "x": 1028.4,
+              "y": 255.5,
+              "confidence": 1.0
+            },
+            "images": [
+              {
+                "image_id": "IMG_C1_Y_001",
+                "image_path": "https://powerlinee.s3.ap-south-1.amazonaws.com/data/RAW/135KV_Tower_1/image/DJI_20260329112917_0010_Z.JPG",
+                "image_url": "",
+                "image_width": 5184,
+                "image_height": 3888,
+                "distance_to_tower_m": 26.156,
+                "telemetry": {
+                  "captured_at": "2026-03-29T11:29:17",
+                  "metadata_source": "xmp",
+                  "location": {
+                    "latitude": 20.8256674,
+                    "longitude": 85.2634708,
+                    "absolute_altitude_m": 67.259,
+                    "relative_altitude_m": 53.042
+                  },
+                  "gimbal": {
+                    "yaw_deg": 47.7,
+                    "pitch_deg": -34.2,
+                    "roll_deg": 0.0
+                  },
+                  "flight": {
+                    "yaw_deg": 47.3,
+                    "pitch_deg": 0.2,
+                    "roll_deg": -0.3
+                  }
+                },
+                "source": {
+                  "video_id": null,
+                  "frame_number": null,
+                  "timestamp": null
+                },
+                "component_detections": {
+                  "arcing_horn": [],
+                  "conductor": [
+                    {
+                      "detection_id": "COND_016",
+                      "confidence": null,
+                      "bbox": [
+                        3056,
+                        2136,
+                        2128,
+                        384
+                      ],
+                      "status": "normal",
+                      "defect": null
+                    }
+                  ],
+                  "corona_ring": [],
+                  "cotter_pin": [],
+                  "cotter_pin_missing": [],
+                  "earthing_wire": [],
+                  "insulator": [
+                    {
+                      "detection_id": "INS_018",
+                      "confidence": null,
+                      "bbox": [
+                        0,
+                        1728,
+                        264,
+                        212
+                      ],
+                      "status": "normal",
+                      "defect": null
+                    },
+                    {
+                      "detection_id": "INS_019",
+                      "confidence": null,
+                      "bbox": [
+                        2012,
+                        1776,
+                        988,
+                        344
+                      ],
+                      "status": "normal",
+                      "defect": null
+                    },
+                    {
+                      "detection_id": "INS_020",
+                      "confidence": null,
+                      "bbox": [
+                        1992,
+                        1892,
+                        996,
+                        388
+                      ],
+                      "status": "normal",
+                      "defect": null
+                    }
+                  ],
+                  "jumper_cable": [
+                    {
+                      "detection_id": "JC_017",
+                      "confidence": null,
+                      "bbox": [
+                        0,
+                        2196,
+                        3100,
+                        1476
+                      ],
+                      "status": "normal",
+                      "defect": null
+                    },
+                    {
+                      "detection_id": "JC_018",
+                      "confidence": null,
+                      "bbox": [
+                        0,
+                        2204,
+                        3440,
+                        1468
+                      ],
+                      "status": "normal",
+                      "defect": null
+                    }
+                  ],
+                  "pg_clamp": [],
+                  "vibration_damper": [
+                    {
+                      "detection_id": "VD_016",
+                      "confidence": null,
+                      "bbox": [
+                        3932,
+                        2308,
+                        296,
+                        100
+                      ],
+                      "status": "not_assessed",
+                      "defect": null
+                    }
+                  ]
+                }
+              },
+              {
+                "image_id": "IMG_C1_Y_002",
+                "image_path": "https://powerlinee.s3.ap-south-1.amazonaws.com/data/RAW/135KV_Tower_1/image/DJI_20260329112924_0011_Z.JPG",
+                "image_url": "",
+                "image_width": 5184,
+                "image_height": 3888,
+                "distance_to_tower_m": 25.963,
+                "telemetry": {
+                  "captured_at": "2026-03-29T11:29:24",
+                  "metadata_source": "xmp",
+                  "location": {
+                    "latitude": 20.825705,
+                    "longitude": 85.263435,
+                    "absolute_altitude_m": 67.218,
+                    "relative_altitude_m": 53.002
+                  },
+                  "gimbal": {
+                    "yaw_deg": 50.0,
+                    "pitch_deg": -34.2,
+                    "roll_deg": 0.0
+                  },
+                  "flight": {
+                    "yaw_deg": 49.8,
+                    "pitch_deg": -0.5,
+                    "roll_deg": 1.5
+                  }
+                },
+                "source": {
+                  "video_id": null,
+                  "frame_number": null,
+                  "timestamp": null
+                },
+                "component_detections": {
+                  "arcing_horn": [
+                    {
+                      "detection_id": "AH_008",
+                      "confidence": null,
+                      "bbox": [
+                        2492,
+                        1788,
+                        64,
+                        244
+                      ],
+                      "status": "not_assessed",
+                      "defect": null
+                    }
+                  ],
+                  "conductor": [
+                    {
+                      "detection_id": "COND_017",
+                      "confidence": null,
+                      "bbox": [
+                        0,
+                        1992,
+                        2504,
+                        316
+                      ],
+                      "status": "normal",
+                      "defect": null
+                    }
+                  ],
+                  "corona_ring": [],
+                  "cotter_pin": [],
+                  "cotter_pin_missing": [],
+                  "earthing_wire": [],
+                  "insulator": [
+                    {
+                      "detection_id": "INS_021",
+                      "confidence": null,
+                      "bbox": [
+                        2540,
+                        1776,
+                        1000,
+                        316
+                      ],
+                      "status": "normal",
+                      "defect": null
+                    }
+                  ],
+                  "jumper_cable": [
+                    {
+                      "detection_id": "JC_019",
+                      "confidence": null,
+                      "bbox": [
+                        2028,
+                        2064,
+                        3156,
+                        1604
+                      ],
+                      "status": "normal",
+                      "defect": null
+                    },
+                    {
+                      "detection_id": "JC_020",
+                      "confidence": null,
+                      "bbox": [
+                        2424,
+                        2028,
+                        2760,
+                        1628
+                      ],
+                      "status": "normal",
+                      "defect": null
+                    }
+                  ],
+                  "pg_clamp": [],
+                  "vibration_damper": [
+                    {
+                      "detection_id": "VD_017",
+                      "confidence": null,
+                      "bbox": [
+                        1268,
+                        2116,
+                        308,
+                        96
+                      ],
+                      "status": "not_assessed",
+                      "defect": null
+                    }
+                  ]
+                }
+              },
+              {
+                "image_id": "IMG_C1_Y_003",
+                "image_path": "https://powerlinee.s3.ap-south-1.amazonaws.com/data/RAW/135KV_Tower_1/image/DJI_20260329112937_0012_Z.JPG",
+                "image_url": "",
+                "image_width": 5184,
+                "image_height": 3888,
+                "distance_to_tower_m": 32.096,
+                "telemetry": {
+                  "captured_at": "2026-03-29T11:29:37",
+                  "metadata_source": "xmp",
+                  "location": {
+                    "latitude": 20.8256894,
+                    "longitude": 85.2634481,
+                    "absolute_altitude_m": 74.019,
+                    "relative_altitude_m": 59.802
+                  },
+                  "gimbal": {
+                    "yaw_deg": 49.0,
+                    "pitch_deg": -34.4,
+                    "roll_deg": 0.0
+                  },
+                  "flight": {
+                    "yaw_deg": 48.7,
+                    "pitch_deg": 0.0,
+                    "roll_deg": -0.4
+                  }
+                },
+                "source": {
+                  "video_id": null,
+                  "frame_number": null,
+                  "timestamp": null
+                },
+                "component_detections": {
+                  "arcing_horn": [
+                    {
+                      "detection_id": "AH_009",
+                      "confidence": null,
+                      "bbox": [
+                        2400,
+                        1784.1,
+                        15.5,
+                        65.3
+                      ],
+                      "status": "not_assessed",
+                      "defect": null
+                    },
+                    {
+                      "detection_id": "AH_010",
+                      "confidence": null,
+                      "bbox": [
+                        3058.7,
+                        1779.6,
+                        31.2,
+                        62.9
+                      ],
+                      "status": "not_assessed",
+                      "defect": null
+                    }
+                  ],
+                  "conductor": [
+                    {
+                      "detection_id": "COND_018",
+                      "confidence": null,
+                      "bbox": [
+                        0,
+                        1840,
+                        2404,
+                        388
+                      ],
+                      "status": "normal",
+                      "defect": null
+                    },
+                    {
+                      "detection_id": "COND_019",
+                      "confidence": null,
+                      "bbox": [
+                        3100,
+                        1840.4,
+                        2084,
+                        291.6
+                      ],
+                      "status": "normal",
+                      "defect": null
+                    },
+                    {
+                      "detection_id": "COND_020",
+                      "confidence": null,
+                      "bbox": [
+                        0,
+                        3241.3,
+                        2090.2,
+                        282.7
+                      ],
+                      "status": "normal",
+                      "defect": null
+                    },
+                    {
+                      "detection_id": "COND_021",
+                      "confidence": null,
+                      "bbox": [
+                        3440,
+                        3284,
+                        1744,
+                        292
+                      ],
+                      "status": "normal",
+                      "defect": null
+                    },
+                    {
+                      "detection_id": "COND_022",
+                      "confidence": null,
+                      "bbox": [
+                        0,
+                        580,
+                        2748,
+                        404
+                      ],
+                      "status": "normal",
+                      "defect": null
+                    },
+                    {
+                      "detection_id": "COND_023",
+                      "confidence": null,
+                      "bbox": [
+                        2852,
+                        580,
+                        2332,
+                        316
+                      ],
+                      "status": "normal",
+                      "defect": null
+                    }
+                  ],
+                  "corona_ring": [],
+                  "cotter_pin": [],
+                  "cotter_pin_missing": [],
+                  "earthing_wire": [
+                    {
+                      "detection_id": "EW_003",
+                      "confidence": null,
+                      "bbox": [
+                        2752,
+                        472.8,
+                        107.9,
+                        143.2
+                      ],
+                      "status": "not_assessed",
+                      "defect": null
+                    }
+                  ],
+                  "insulator": [
+                    {
+                      "detection_id": "INS_022",
+                      "confidence": null,
+                      "bbox": [
+                        2404,
+                        1752,
+                        284,
+                        116
+                      ],
+                      "status": "normal",
+                      "defect": null
+                    },
+                    {
+                      "detection_id": "INS_023",
+                      "confidence": null,
+                      "bbox": [
+                        2804,
+                        1740,
+                        288,
+                        100
+                      ],
+                      "status": "normal",
+                      "defect": null
+                    },
+                    {
+                      "detection_id": "INS_024",
+                      "confidence": null,
+                      "bbox": [
+                        2809.5,
+                        1792.2,
+                        282.5,
+                        79.8
+                      ],
+                      "status": "normal",
+                      "defect": null
+                    },
+                    {
+                      "detection_id": "INS_025",
+                      "confidence": null,
+                      "bbox": [
+                        2108,
+                        3180,
+                        356,
+                        96
+                      ],
+                      "status": "normal",
+                      "defect": null
+                    },
+                    {
+                      "detection_id": "INS_026",
+                      "confidence": null,
+                      "bbox": [
+                        3040,
+                        3164,
+                        400,
+                        128
+                      ],
+                      "status": "normal",
+                      "defect": null
+                    },
+                    {
+                      "detection_id": "INS_027",
+                      "confidence": null,
+                      "bbox": [
+                        3044,
+                        3200,
+                        404,
+                        140
+                      ],
+                      "status": "normal",
+                      "defect": null
+                    }
+                  ],
+                  "jumper_cable": [
+                    {
+                      "detection_id": "JC_021",
+                      "confidence": null,
+                      "bbox": [
+                        2315.0,
+                        1864.1,
+                        890.1,
+                        241.8
+                      ],
+                      "status": "normal",
+                      "defect": null
+                    },
+                    {
+                      "detection_id": "JC_022",
+                      "confidence": null,
+                      "bbox": [
+                        2387.7,
+                        1852,
+                        716.2,
+                        247.8
+                      ],
+                      "status": "normal",
+                      "defect": null
+                    },
+                    {
+                      "detection_id": "JC_023",
+                      "confidence": null,
+                      "bbox": [
+                        1954.5,
+                        3267.1,
+                        1582.5,
+                        495.6
+                      ],
+                      "status": "normal",
+                      "defect": null
+                    },
+                    {
+                      "detection_id": "JC_024",
+                      "confidence": null,
+                      "bbox": [
+                        2084,
+                        3280,
+                        1356,
+                        488.8
+                      ],
+                      "status": "normal",
+                      "defect": null
+                    }
+                  ],
+                  "pg_clamp": [],
+                  "vibration_damper": [
+                    {
+                      "detection_id": "VD_018",
+                      "confidence": null,
+                      "bbox": [
+                        2360,
+                        640,
+                        56,
+                        28
+                      ],
+                      "status": "not_assessed",
+                      "defect": null
+                    },
+                    {
+                      "detection_id": "VD_019",
+                      "confidence": null,
+                      "bbox": [
+                        3236,
+                        632,
+                        64,
+                        40
+                      ],
+                      "status": "not_assessed",
+                      "defect": null
+                    },
+                    {
+                      "detection_id": "VD_020",
+                      "confidence": null,
+                      "bbox": [
+                        2076,
+                        1896,
+                        68,
+                        28
+                      ],
+                      "status": "not_assessed",
+                      "defect": null
+                    },
+                    {
+                      "detection_id": "VD_021",
+                      "confidence": null,
+                      "bbox": [
+                        3336,
+                        1880,
+                        80,
+                        28
+                      ],
+                      "status": "not_assessed",
+                      "defect": null
+                    },
+                    {
+                      "detection_id": "VD_022",
+                      "confidence": null,
+                      "bbox": [
+                        1685.7,
+                        3284.2,
+                        102.0,
+                        33.5
+                      ],
+                      "status": "not_assessed",
+                      "defect": null
+                    },
+                    {
+                      "detection_id": "VD_023",
+                      "confidence": null,
+                      "bbox": [
+                        3788,
+                        3348,
+                        84,
+                        36
+                      ],
+                      "status": "not_assessed",
+                      "defect": null
+                    }
+                  ]
+                }
+              },
+              {
+                "image_id": "IMG_C1_Y_004",
+                "image_path": "https://powerlinee.s3.ap-south-1.amazonaws.com/data/RAW/135KV_Tower_1/image/DJI_20260329113024_0015_Z.JPG",
+                "image_url": "",
+                "image_width": 5184,
+                "image_height": 3888,
+                "distance_to_tower_m": 32.0,
+                "telemetry": {
+                  "captured_at": "2026-03-29T11:30:24",
+                  "metadata_source": "xmp",
+                  "location": {
+                    "latitude": 20.8260156,
+                    "longitude": 85.2638736,
+                    "absolute_altitude_m": 79.613,
+                    "relative_altitude_m": 65.397
+                  },
+                  "gimbal": {
+                    "yaw_deg": -129.9,
+                    "pitch_deg": -34.4,
+                    "roll_deg": 0.0
+                  },
+                  "flight": {
+                    "yaw_deg": -129.1,
+                    "pitch_deg": 1.4,
+                    "roll_deg": 1.0
+                  }
+                },
+                "source": {
+                  "video_id": null,
+                  "frame_number": null,
+                  "timestamp": null
+                },
+                "component_detections": {
+                  "arcing_horn": [
+                    {
+                      "detection_id": "AH_011",
+                      "confidence": null,
+                      "bbox": [
+                        4484,
+                        3288,
+                        68,
+                        256
+                      ],
+                      "status": "not_assessed",
+                      "defect": null
+                    }
+                  ],
+                  "conductor": [
+                    {
+                      "detection_id": "COND_024",
+                      "confidence": null,
+                      "bbox": [
+                        4532,
+                        3504,
+                        652,
+                        72
+                      ],
+                      "status": "normal",
+                      "defect": null
+                    },
+                    {
+                      "detection_id": "COND_025",
+                      "confidence": null,
+                      "bbox": [
+                        3296,
+                        2212,
+                        1888,
+                        856
+                      ],
+                      "status": "normal",
+                      "defect": null
+                    }
+                  ],
+                  "corona_ring": [],
+                  "cotter_pin": [],
+                  "cotter_pin_missing": [],
+                  "earthing_wire": [],
+                  "insulator": [
+                    {
+                      "detection_id": "INS_028",
+                      "confidence": null,
+                      "bbox": [
+                        115.2,
+                        3535.1,
+                        1199.2,
+                        349.6
+                      ],
+                      "status": "normal",
+                      "defect": null
+                    },
+                    {
+                      "detection_id": "INS_029",
+                      "confidence": null,
+                      "bbox": [
+                        3332.2,
+                        3332.4,
+                        1149.9,
+                        276.2
+                      ],
+                      "status": "normal",
+                      "defect": null
+                    },
+                    {
+                      "detection_id": "INS_030",
+                      "confidence": null,
+                      "bbox": [
+                        129.3,
+                        3366.3,
+                        1181.3,
+                        387.2
+                      ],
+                      "status": "normal",
+                      "defect": null
+                    }
+                  ],
+                  "jumper_cable": [
+                    {
+                      "detection_id": "JC_025",
+                      "confidence": null,
+                      "bbox": [
+                        4480,
+                        3568,
+                        184,
+                        320
+                      ],
+                      "status": "normal",
+                      "defect": null
+                    },
+                    {
+                      "detection_id": "JC_026",
+                      "confidence": null,
+                      "bbox": [
+                        4576.9,
+                        3552,
+                        511.1,
+                        336
+                      ],
+                      "status": "normal",
+                      "defect": null
+                    }
+                  ],
+                  "pg_clamp": [],
+                  "vibration_damper": []
+                }
+              }
+            ]
+          },
+          "B": {
+            "keypoint": {
+              "x": 1029.8,
+              "y": 359.2,
+              "confidence": 0.999
+            },
+            "images": [
+              {
+                "image_id": "IMG_C1_B_001",
+                "image_path": "https://powerlinee.s3.ap-south-1.amazonaws.com/data/RAW/135KV_Tower_1/image/DJI_20260329112853_0008_Z.JPG",
+                "image_url": "",
+                "image_width": 5184,
+                "image_height": 3888,
+                "distance_to_tower_m": 24.7,
+                "telemetry": {
+                  "captured_at": "2026-03-29T11:28:53",
+                  "metadata_source": "xmp",
+                  "location": {
+                    "latitude": 20.8256651,
+                    "longitude": 85.2634798,
+                    "absolute_altitude_m": 59.317,
+                    "relative_altitude_m": 45.1
+                  },
+                  "gimbal": {
+                    "yaw_deg": 47.7,
+                    "pitch_deg": -34.2,
+                    "roll_deg": 0.0
+                  },
+                  "flight": {
+                    "yaw_deg": 48.1,
+                    "pitch_deg": -0.5,
+                    "roll_deg": -2.1
+                  }
+                },
+                "source": {
+                  "video_id": null,
+                  "frame_number": null,
+                  "timestamp": null
+                },
+                "component_detections": {
+                  "arcing_horn": [],
+                  "conductor": [
+                    {
+                      "detection_id": "COND_026",
+                      "confidence": null,
+                      "bbox": [
+                        2828,
+                        1164,
+                        2356,
+                        412
+                      ],
+                      "status": "normal",
+                      "defect": null
+                    }
+                  ],
+                  "corona_ring": [],
+                  "cotter_pin": [],
+                  "cotter_pin_missing": [],
+                  "earthing_wire": [],
+                  "insulator": [
+                    {
+                      "detection_id": "INS_031",
+                      "confidence": null,
+                      "bbox": [
+                        1652,
+                        768,
+                        1092,
+                        384
+                      ],
+                      "status": "normal",
+                      "defect": null
+                    },
+                    {
+                      "detection_id": "INS_032",
+                      "confidence": null,
+                      "bbox": [
+                        1644,
+                        912,
+                        1092,
+                        412
+                      ],
+                      "status": "normal",
+                      "defect": null
+                    }
+                  ],
+                  "jumper_cable": [
+                    {
+                      "detection_id": "JC_027",
+                      "confidence": null,
+                      "bbox": [
+                        0,
+                        1224,
+                        2860,
+                        1384
+                      ],
+                      "status": "normal",
+                      "defect": null
+                    },
+                    {
+                      "detection_id": "JC_028",
+                      "confidence": null,
+                      "bbox": [
+                        0,
+                        1272,
+                        3332,
+                        1328
+                      ],
+                      "status": "normal",
+                      "defect": null
+                    }
+                  ],
+                  "pg_clamp": [],
+                  "vibration_damper": [
+                    {
+                      "detection_id": "VD_024",
+                      "confidence": null,
+                      "bbox": [
+                        3668,
+                        1340,
+                        312,
+                        104
+                      ],
+                      "status": "not_assessed",
+                      "defect": null
+                    }
+                  ]
+                }
+              },
+              {
+                "image_id": "IMG_C1_B_002",
+                "image_path": "https://powerlinee.s3.ap-south-1.amazonaws.com/data/RAW/135KV_Tower_1/image/DJI_20260329112904_0009_Z.JPG",
+                "image_url": "",
+                "image_width": 5184,
+                "image_height": 3888,
+                "distance_to_tower_m": 24.886,
+                "telemetry": {
+                  "captured_at": "2026-03-29T11:29:04",
+                  "metadata_source": "xmp",
+                  "location": {
+                    "latitude": 20.8257009,
+                    "longitude": 85.2634452,
+                    "absolute_altitude_m": 61.005,
+                    "relative_altitude_m": 46.789
+                  },
+                  "gimbal": {
+                    "yaw_deg": 47.7,
+                    "pitch_deg": -34.2,
+                    "roll_deg": 0.0
+                  },
+                  "flight": {
+                    "yaw_deg": 47.4,
+                    "pitch_deg": -1.3,
+                    "roll_deg": 0.7
+                  }
+                },
+                "source": {
+                  "video_id": null,
+                  "frame_number": null,
+                  "timestamp": null
+                },
+                "component_detections": {
+                  "arcing_horn": [
+                    {
+                      "detection_id": "AH_012",
+                      "confidence": null,
+                      "bbox": [
+                        2064,
+                        1800,
+                        88,
+                        236
+                      ],
+                      "status": "not_assessed",
+                      "defect": null
+                    }
+                  ],
+                  "conductor": [
+                    {
+                      "detection_id": "COND_027",
+                      "confidence": null,
+                      "bbox": [
+                        0,
+                        1996,
+                        2072,
+                        204
+                      ],
+                      "status": "normal",
+                      "defect": null
+                    }
+                  ],
+                  "corona_ring": [],
+                  "cotter_pin": [],
+                  "cotter_pin_missing": [],
+                  "earthing_wire": [],
+                  "insulator": [
+                    {
+                      "detection_id": "INS_033",
+                      "confidence": null,
+                      "bbox": [
+                        2104,
+                        1784,
+                        1036,
+                        328
+                      ],
+                      "status": "normal",
+                      "defect": null
+                    }
+                  ],
+                  "jumper_cable": [
+                    {
+                      "detection_id": "JC_029",
+                      "confidence": null,
+                      "bbox": [
+                        1592,
+                        2064,
+                        3592,
+                        1528
+                      ],
+                      "status": "normal",
+                      "defect": null
+                    },
+                    {
+                      "detection_id": "JC_030",
+                      "confidence": null,
+                      "bbox": [
+                        2008,
+                        2044,
+                        3176,
+                        1544
+                      ],
+                      "status": "normal",
+                      "defect": null
+                    },
+                    {
+                      "detection_id": "JC_031",
+                      "confidence": null,
+                      "bbox": [
+                        3340,
+                        0,
+                        1844,
+                        396
+                      ],
+                      "status": "normal",
+                      "defect": null
+                    },
+                    {
+                      "detection_id": "JC_032",
+                      "confidence": null,
+                      "bbox": [
+                        3395.9,
+                        0,
+                        1788.1,
+                        376
+                      ],
+                      "status": "normal",
+                      "defect": null
+                    }
+                  ],
+                  "pg_clamp": [],
+                  "vibration_damper": [
+                    {
+                      "detection_id": "VD_025",
+                      "confidence": null,
+                      "bbox": [
+                        960,
+                        2080,
+                        300,
+                        100
+                      ],
+                      "status": "not_assessed",
+                      "defect": null
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      }
+    ],
+    "unassigned_images": [
+      {
+        "image_path": "https://powerlinee.s3.ap-south-1.amazonaws.com/data/RAW/135KV_Tower_1/image/DJI_20260329112631_0001_Z.JPG",
+        "source": {
+          "video_id": null,
+          "frame_number": null,
+          "timestamp": null
+        },
+        "reason": "drone position is 120 deg from the tower, no phase side within 60 deg; no phase hardware detected"
+      },
+      {
+        "image_path": "https://powerlinee.s3.ap-south-1.amazonaws.com/data/RAW/135KV_Tower_1/image/DJI_20260329112759_0002_Z.JPG",
+        "source": {
+          "video_id": null,
+          "frame_number": null,
+          "timestamp": null
+        },
+        "reason": "aimed below the bottom phase level (tower body / ground); no phase hardware detected"
+      },
+      {
+        "image_path": "https://powerlinee.s3.ap-south-1.amazonaws.com/data/RAW/135KV_Tower_1/image/DJI_20260329112811_0003_Z.JPG",
+        "source": {
+          "video_id": null,
+          "frame_number": null,
+          "timestamp": null
+        },
+        "reason": "aimed below the bottom phase level (tower body / ground); no phase hardware detected"
+      },
+      {
+        "image_path": "https://powerlinee.s3.ap-south-1.amazonaws.com/data/RAW/135KV_Tower_1/image/DJI_20260329112817_0004_Z.JPG",
+        "source": {
+          "video_id": null,
+          "frame_number": null,
+          "timestamp": null
+        },
+        "reason": "aimed below the bottom phase level (tower body / ground); no phase hardware detected"
+      },
+      {
+        "image_path": "https://powerlinee.s3.ap-south-1.amazonaws.com/data/RAW/135KV_Tower_1/image/DJI_20260329112827_0005_Z.JPG",
+        "source": {
+          "video_id": null,
+          "frame_number": null,
+          "timestamp": null
+        },
+        "reason": "aimed below the bottom phase level (tower body / ground); no phase hardware detected"
+      },
+      {
+        "image_path": "https://powerlinee.s3.ap-south-1.amazonaws.com/data/RAW/135KV_Tower_1/image/DJI_20260329112831_0006_Z.JPG",
+        "source": {
+          "video_id": null,
+          "frame_number": null,
+          "timestamp": null
+        },
+        "reason": "aimed below the bottom phase level (tower body / ground); no phase hardware detected"
+      },
+      {
+        "image_path": "https://powerlinee.s3.ap-south-1.amazonaws.com/data/RAW/135KV_Tower_1/image/DJI_20260329112839_0007_Z.JPG",
+        "source": {
+          "video_id": null,
+          "frame_number": null,
+          "timestamp": null
+        },
+        "reason": "aimed below the bottom phase level (tower body / ground); no phase hardware detected"
+      },
+      {
+        "image_path": "https://powerlinee.s3.ap-south-1.amazonaws.com/data/RAW/135KV_Tower_1/image/DJI_20260329113121_0020_Z.JPG",
+        "source": {
+          "video_id": null,
+          "frame_number": null,
+          "timestamp": null
+        },
+        "reason": "aimed below the bottom phase level (tower body / ground); no phase hardware detected"
+      },
+      {
+        "image_path": "https://powerlinee.s3.ap-south-1.amazonaws.com/data/RAW/135KV_Tower_1/image/DJI_20260329113124_0021_Z.JPG",
+        "source": {
+          "video_id": null,
+          "frame_number": null,
+          "timestamp": null
+        },
+        "reason": "aimed below the bottom phase level (tower body / ground); no phase hardware detected"
+      },
+      {
+        "image_path": "https://powerlinee.s3.ap-south-1.amazonaws.com/data/RAW/135KV_Tower_1/image/DJI_20260329113127_0022_Z.JPG",
+        "source": {
+          "video_id": null,
+          "frame_number": null,
+          "timestamp": null
+        },
+        "reason": "aimed below the bottom phase level (tower body / ground); no phase hardware detected"
+      },
+      {
+        "image_path": "https://powerlinee.s3.ap-south-1.amazonaws.com/data/RAW/135KV_Tower_1/image/DJI_20260329113133_0023_Z.JPG",
+        "source": {
+          "video_id": null,
+          "frame_number": null,
+          "timestamp": null
+        },
+        "reason": "aimed below the bottom phase level (tower body / ground); no phase hardware detected"
+      },
+      {
+        "image_path": "https://powerlinee.s3.ap-south-1.amazonaws.com/data/RAW/135KV_Tower_1/image/DJI_20260329113138_0024_Z.JPG",
+        "source": {
+          "video_id": null,
+          "frame_number": null,
+          "timestamp": null
+        },
+        "reason": "aimed below the bottom phase level (tower body / ground); no phase hardware detected"
+      },
+      {
+        "image_path": "https://powerlinee.s3.ap-south-1.amazonaws.com/data/RAW/135KV_Tower_1/image/DJI_20260329113149_0025_Z.JPG",
+        "source": {
+          "video_id": null,
+          "frame_number": null,
+          "timestamp": null
+        },
+        "reason": "aimed below the bottom phase level (tower body / ground); no phase hardware detected"
+      },
+      {
+        "image_path": "https://powerlinee.s3.ap-south-1.amazonaws.com/data/RAW/135KV_Tower_1/image/DJI_20260329113158_0026_Z.JPG",
+        "source": {
+          "video_id": null,
+          "frame_number": null,
+          "timestamp": null
+        },
+        "reason": "aimed below the bottom phase level (tower body / ground); no phase hardware detected"
+      }
+    ]
+  }
+}

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../config/app_config.dart';
 import '../config/app_theme.dart';
 import '../models/inspection_model.dart';
 import '../services/app_state.dart';
 import '../services/data_service.dart';
+import '../services/tower_registry.dart';
 import '../widgets/asset_navigator_panel.dart';
 import '../widgets/tower_structure_panel.dart';
 import '../widgets/phase_inspection_view.dart';
@@ -20,6 +22,7 @@ class InspectionScreen extends StatefulWidget {
 
 class _InspectionScreenState extends State<InspectionScreen> {
   InspectionData? _inspectionData;
+  String? _loadedTowerId;
   String? _selectedAssetType;
   Circuit? _selectedCircuit;
   Phase? _selectedPhase;
@@ -29,21 +32,67 @@ class _InspectionScreenState extends State<InspectionScreen> {
   @override
   void initState() {
     super.initState();
-    _loadData();
+    _loadInitialData();
+    DataService.preloadAll();
   }
 
-  Future<void> _loadData() async {
+  Future<void> _loadInitialData() async {
     try {
       final data = await DataService.loadInspectionData();
-      setState(() {
-        _inspectionData = data;
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _inspectionData = data;
+          _loadedTowerId = data.tower.towerId;
+          _isLoading = false;
+        });
+      }
     } catch (e) {
-      setState(() {
-        _errorMessage = e.toString();
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _errorMessage = e.toString();
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _loadDataForTower(String targetId, AppState appState) async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final data = await DataService.loadInspectionData(targetId);
+      if (mounted) {
+        setState(() {
+          _inspectionData = data;
+          _loadedTowerId = data.tower.towerId;
+          _isLoading = false;
+
+          Circuit? circuit;
+          if (appState.selectedCircuitId != null) {
+            final match = data.tower.circuits
+                .where((c) => c.circuitId == appState.selectedCircuitId);
+            if (match.isNotEmpty) circuit = match.first;
+          }
+          _selectedCircuit = circuit;
+          _selectedAssetType = circuit != null ? 'Circuit' : null;
+
+          Phase? phase;
+          if (appState.selectedPhaseName != null && circuit != null) {
+            phase = circuit.phases[appState.selectedPhaseName!];
+          }
+          _selectedPhase = phase;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = e.toString();
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -51,6 +100,16 @@ class _InspectionScreenState extends State<InspectionScreen> {
   Widget build(BuildContext context) {
     // 1. Listen to global AppState (manages user session and active screen)
     final appState = Provider.of<AppState>(context);
+    final targetTowerDef = TowerRegistry.getTower(appState.selectedTowerId);
+    final targetTowerKey = targetTowerDef?.towerId ?? AppConfig.defaultTowerId;
+
+    if (_loadedTowerId != targetTowerKey && !_isLoading && appState.currentView == AppView.inspection) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _loadedTowerId != targetTowerKey) {
+          _loadDataForTower(targetTowerKey, appState);
+        }
+      });
+    }
 
     // Initial Loading State: waits for data and stored session in browser
     if (!appState.isInitialized || _isLoading) {
@@ -99,11 +158,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
                 const SizedBox(height: 16),
                 ElevatedButton(
                   onPressed: () {
-                    setState(() {
-                      _isLoading = true;
-                      _errorMessage = null;
-                    });
-                    _loadData();
+                    _loadDataForTower(targetTowerKey, appState);
                   },
                   child: const Text('Retry'),
                 ),
@@ -142,22 +197,31 @@ class _InspectionScreenState extends State<InspectionScreen> {
         tower: tower,
         initialDate: appState.selectedDate,
         initialVoltage: appState.selectedVoltage,
-        initialTowerId: appState.selectedTowerId,
+        initialTowerId: appState.returnFromInspectionTowerId ?? appState.selectedTowerId,
+        initialCorridorTop: appState.selectedCorridorTop,
+        initialCorridorBottom: appState.selectedCorridorBottom,
+        returnFromInspection: appState.returnFromInspectionTowerId != null,
         onDateChanged: (d) => appState.setSelectedDate(d),
         onVoltageChanged: (v) => appState.setSelectedVoltage(v),
         onTowerChanged: (t) => appState.setSelectedTowerId(t),
+        onCorridorChanged: (top, bottom) => appState.setSelectedCorridor(top, bottom),
         onLogout: () => appState.logout(),
         onOpenInspection: (c, p, [towerId]) {
+          final targetDef = TowerRegistry.getTower(towerId ?? appState.selectedTowerId);
+          final targetKey = targetDef?.towerId ?? AppConfig.defaultTowerId;
           setState(() {
             _selectedAssetType = c != null ? 'Circuit' : null;
             _selectedCircuit = c;
             _selectedPhase = p;
           });
           appState.navigateToInspection(
-            towerId: towerId,
+            towerId: targetDef?.displayCode ?? towerId,
             circuitId: c?.circuitId,
             phaseName: p?.phaseName,
           );
+          if (_loadedTowerId != targetKey) {
+            _loadDataForTower(targetKey, appState);
+          }
         },
       );
     }
@@ -189,7 +253,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
                       InkWell(
                         onTap: () {
                           // Return to Page 1 (Network Map)
-                          appState.navigateToMap();
+                          appState.navigateToMap(returnTowerId: _loadedTowerId ?? appState.selectedTowerId);
                         },
                         borderRadius: BorderRadius.circular(6),
                         child: Row(
@@ -265,11 +329,18 @@ class _InspectionScreenState extends State<InspectionScreen> {
                         selectedCircuit: _selectedCircuit,
                         selectedPhase: _selectedPhase,
                         onSelectAssetType: (type) {
+                          final isSingle = tower.summary.circuitCount == 1 || tower.circuits.length == 1;
                           setState(() {
                             _selectedAssetType = type;
-                            _selectedCircuit = null;
+                            _selectedCircuit = (isSingle && tower.circuits.isNotEmpty) ? tower.circuits.first : null;
                             _selectedPhase = null;
                           });
+                          if (isSingle && tower.circuits.isNotEmpty) {
+                            appState.navigateToInspection(
+                              circuitId: tower.circuits.first.circuitId,
+                              phaseName: null,
+                            );
+                          }
                         },
                         onSelectCircuit: (c) {
                           setState(() {
@@ -293,7 +364,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
                           );
                         },
                         onBackToMap: () {
-                          appState.navigateToMap();
+                          appState.navigateToMap(returnTowerId: _loadedTowerId ?? appState.selectedTowerId);
                         },
                       ),
 
@@ -354,7 +425,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
                 leading: IconButton(
                   icon: const Icon(Icons.arrow_back, color: Color(0xFF0F172A)),
                   tooltip: 'Back to Network Map',
-                  onPressed: () => appState.navigateToMap(),
+                  onPressed: () => appState.navigateToMap(returnTowerId: _loadedTowerId ?? appState.selectedTowerId),
                 ),
                 title: Row(
                   children: [
@@ -411,11 +482,18 @@ class _InspectionScreenState extends State<InspectionScreen> {
                     selectedCircuit: _selectedCircuit,
                     selectedPhase: _selectedPhase,
                     onSelectAssetType: (type) {
+                      final isSingle = tower.summary.circuitCount == 1 || tower.circuits.length == 1;
                       setState(() {
                         _selectedAssetType = type;
-                        _selectedCircuit = null;
+                        _selectedCircuit = (isSingle && tower.circuits.isNotEmpty) ? tower.circuits.first : null;
                         _selectedPhase = null;
                       });
+                      if (isSingle && tower.circuits.isNotEmpty) {
+                        appState.navigateToInspection(
+                          circuitId: tower.circuits.first.circuitId,
+                          phaseName: null,
+                        );
+                      }
                     },
                     onSelectCircuit: (c) {
                       setState(() {
@@ -434,7 +512,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
                         phaseName: p.phaseName,
                       );
                     },
-                    onBackToMap: () => appState.navigateToMap(),
+                    onBackToMap: () => appState.navigateToMap(returnTowerId: _loadedTowerId ?? appState.selectedTowerId),
                   ),
                   TowerStructurePanel(
                     width: double.infinity,

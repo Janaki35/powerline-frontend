@@ -54,6 +54,18 @@ class AppState extends ChangeNotifier {
   String? _selectedPhaseName;
   String? get selectedPhaseName => _selectedPhaseName;
 
+  String? _selectedCorridorTop;
+  String? get selectedCorridorTop => _selectedCorridorTop;
+
+  String? _selectedCorridorBottom;
+  String? get selectedCorridorBottom => _selectedCorridorBottom;
+
+  void setSelectedCorridor(String? top, String? bottom) {
+    _selectedCorridorTop = top;
+    _selectedCorridorBottom = bottom;
+    notifyListeners();
+  }
+
   /// Loads the saved session when the website starts or refreshes (F5 / ↻).
   /// If the user was logged in and viewing the 2nd page (Inspection),
   /// they stay on the 2nd page with their selected tower!
@@ -69,7 +81,7 @@ class AppState extends ChangeNotifier {
             ? AppView.inspection
             : AppView.networkMap;
 
-        // Restore saved map filters and tower selection
+        // Restore saved map filters and tower selection (defaults to latest 20 Apr 2026)
         _selectedDate = prefs.getString(_keySelectedDate) ?? '20 Apr 2026';
         _selectedVoltage = prefs.getString(_keySelectedVoltage) ?? 'All voltages';
         _selectedTowerId = prefs.getString(_keySelectedTowerId) ?? 'T01-400KV-SA';
@@ -91,12 +103,21 @@ class AppState extends ChangeNotifier {
   Future<void> login() async {
     _isLoggedIn = true;
     _currentView = AppView.networkMap;
+    // Always start with the latest date towers on initial login
+    _selectedDate = '20 Apr 2026';
+    _selectedVoltage = 'All voltages';
+    _selectedTowerId = 'T01-400KV-SA';
+    _selectedCorridorTop = null;
+    _selectedCorridorBottom = null;
     notifyListeners();
 
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool(_keyIsLoggedIn, true);
       await prefs.setString(_keyLastScreen, 'networkMap');
+      await prefs.setString(_keySelectedDate, '20 Apr 2026');
+      await prefs.setString(_keySelectedVoltage, 'All voltages');
+      await prefs.setString(_keySelectedTowerId, 'T01-400KV-SA');
     } catch (e) {
       debugPrint('Error saving login session: $e');
     }
@@ -106,20 +127,35 @@ class AppState extends ChangeNotifier {
   Future<void> logout() async {
     _isLoggedIn = false;
     _currentView = AppView.signIn;
+    _selectedDate = '20 Apr 2026';
+    _selectedVoltage = 'All voltages';
+    _selectedTowerId = 'T01-400KV-SA';
+    _selectedCorridorTop = null;
+    _selectedCorridorBottom = null;
     notifyListeners();
 
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool(_keyIsLoggedIn, false);
       await prefs.remove(_keyLastScreen);
+      await prefs.remove(_keySelectedDate);
+      await prefs.remove(_keySelectedVoltage);
+      await prefs.remove(_keySelectedTowerId);
     } catch (e) {
       debugPrint('Error clearing login session: $e');
     }
   }
 
-  /// Navigates to the 1st page (Network Map), preserving current selections
-  Future<void> navigateToMap() async {
+  String? _returnFromInspectionTowerId;
+  String? get returnFromInspectionTowerId => _returnFromInspectionTowerId;
+
+  /// Navigates to the 1st page (Network Map), optionally focusing on the inspected tower
+  Future<void> navigateToMap({String? returnTowerId}) async {
     _currentView = AppView.networkMap;
+    if (returnTowerId != null && returnTowerId.isNotEmpty) {
+      _returnFromInspectionTowerId = returnTowerId;
+      _selectedTowerId = returnTowerId;
+    }
     notifyListeners();
 
     try {
@@ -130,6 +166,11 @@ class AppState extends ChangeNotifier {
     }
   }
 
+  /// Clears the return focus once handled by the map
+  void clearReturnFocus() {
+    _returnFromInspectionTowerId = null;
+  }
+
   /// Navigates to the 2nd page (Inspection) for a selected tower, circuit, and phase
   Future<void> navigateToInspection({
     String? towerId,
@@ -137,6 +178,7 @@ class AppState extends ChangeNotifier {
     String? phaseName,
   }) async {
     _currentView = AppView.inspection;
+    _returnFromInspectionTowerId = null;
     if (towerId != null && towerId.isNotEmpty) {
       _selectedTowerId = towerId;
     }
