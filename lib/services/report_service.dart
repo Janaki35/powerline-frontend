@@ -1,22 +1,33 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'tower_registry.dart';
 
 class ReportService {
-  static const String reportFileName =
+  static const String defaultReportFileName =
       '400KV_Tower_1_Site_B_inspection_report_reviewed 1.pdf';
 
-  static const String s3ReportUrl =
+  static const String defaultS3ReportUrl =
       'https://powerlinee.s3.ap-south-1.amazonaws.com/data/400KV_Tower_1_Site_B_inspection_report_reviewed+1.pdf';
 
-  /// Direct download endpoint for the 80-page inspection report
-  static String get downloadUrl => s3ReportUrl;
+  /// Resolves the S3 PDF report URL for a tower
+  static String getReportUrl([String? towerIdOrCode]) {
+    final def = TowerRegistry.getTower(towerIdOrCode);
+    if (def != null && def.pdfS3Url != null && def.pdfS3Url!.isNotEmpty) {
+      return def.pdfS3Url!;
+    }
+    return defaultS3ReportUrl;
+  }
+
+  /// Direct download endpoint
+  static String get downloadUrl => defaultS3ReportUrl;
 
   /// View URL for the inspection report
-  static String get reportUrl => s3ReportUrl;
+  static String get reportUrl => defaultS3ReportUrl;
 
-  /// Opens or downloads the 80-page local inspection report
-  static Future<void> downloadReport(BuildContext context) async {
-    final uri = Uri.parse(downloadUrl);
+  /// Opens or downloads the inspection report for the active tower
+  static Future<void> downloadReport(BuildContext context, {String? towerId}) async {
+    final targetUrl = getReportUrl(towerId);
+    final uri = Uri.parse(targetUrl);
     try {
       final launched = await launchUrl(
         uri,
@@ -39,3 +50,4 @@ class ReportService {
     }
   }
 }
+

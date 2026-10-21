@@ -3,6 +3,7 @@ import '../config/app_config.dart';
 import '../config/app_theme.dart';
 import '../models/inspection_model.dart';
 import '../services/image_service.dart';
+import '../services/tower_registry.dart';
 
 class TowerStructurePanel extends StatefulWidget {
   final Tower tower;
@@ -27,18 +28,38 @@ class TowerStructurePanel extends StatefulWidget {
 }
 
 class _TowerStructurePanelState extends State<TowerStructurePanel> {
-  // Raw image dimension: 1920 x 1080.
-  // Crop area focusing on the tower:
-  static const double _cropLeft = 620.0;
-  static const double _cropTop = 130.0;
-  static const double _cropWidth = 680.0;
-  static const double _cropHeight = 850.0;
-
   @override
   Widget build(BuildContext context) {
     final hasSelectedCircuit = widget.selectedCircuit != null;
 
-    const imagePath = AppConfig.baseTowerImageAsset;
+    final towerDef = TowerRegistry.getTower(widget.tower.towerId);
+    final imagePath = towerDef?.baseImageAsset ?? AppConfig.baseTowerImageAsset;
+    final voltageText = towerDef?.voltage ?? '400 kV';
+    final siteText = towerDef?.site ?? 'Site B';
+    final is135 = voltageText.contains('135') ||
+        widget.tower.towerId.contains('135') ||
+        widget.tower.towerName.contains('135');
+    final towerType = widget.tower.summary.circuitCount == 1
+        ? (is135 ? 'Single circuit - Tension' : 'Single circuit - Suspension')
+        : (is135 ? 'Double circuit - Tension' : 'Double circuit - Suspension');
+
+    // Dynamic crop calculation from tower bounding box
+    final det = widget.tower.towerDetection;
+    final bbox = det.bbox;
+    final double rawW = det.imageWidth > 0 ? det.imageWidth.toDouble() : 1920.0;
+    final double rawH = det.imageHeight > 0 ? det.imageHeight.toDouble() : 1080.0;
+
+    final double bx = bbox.isNotEmpty ? bbox[0] : 0.0;
+    final double by = bbox.length > 1 ? bbox[1] : 0.0;
+    final double bw = bbox.length > 2 ? bbox[2] : rawW;
+    final double bh = bbox.length > 3 ? bbox[3] : rawH;
+
+    final double padH = (bw * 0.45).clamp(60.0, rawW);
+    final double padV = (bh * 0.08).clamp(30.0, rawH);
+    final double cropLeft = (bx - padH).clamp(0.0, rawW);
+    final double cropTop = (by - padV).clamp(0.0, rawH);
+    final double cropWidth = (bw + 2 * padH).clamp(100.0, rawW - cropLeft);
+    final double cropHeight = (bh + 2 * padV).clamp(100.0, rawH - cropTop);
 
     return Container(
       width: widget.width ?? 410,
@@ -57,7 +78,7 @@ class _TowerStructurePanelState extends State<TowerStructurePanel> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Title and [ RGB | Thermal ] Pill Toggle (shown only when a circuit is selected)
+                // Title and voltage/site subtitle
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -75,7 +96,7 @@ class _TowerStructurePanelState extends State<TowerStructurePanel> {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          ' · 400 kV · Site B',
+                          ' · $voltageText · $siteText',
                           style: const TextStyle(
                             fontSize: 12.5,
                             color: Color(0xFF64748B),
@@ -83,18 +104,16 @@ class _TowerStructurePanelState extends State<TowerStructurePanel> {
                         ),
                       ],
                     ),
-
-
                   ],
                 ),
                 const SizedBox(height: 12),
 
                 // Metadata Row: STRUCTURE, TOWER TYPE
-                const Wrap(
+                Wrap(
                   spacing: 24,
                   runSpacing: 8,
                   children: [
-                    Column(
+                    const Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
@@ -111,14 +130,14 @@ class _TowerStructurePanelState extends State<TowerStructurePanel> {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
+                        const Text(
                           'TOWER TYPE',
                           style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF64748B)),
                         ),
-                        SizedBox(height: 2),
+                        const SizedBox(height: 2),
                         Text(
-                          'Double circuit - Suspension',
-                          style: TextStyle(fontSize: 12, color: AppColors.textPrimary),
+                          towerType,
+                          style: const TextStyle(fontSize: 12, color: AppColors.textPrimary),
                         ),
                       ],
                     ),
@@ -156,7 +175,9 @@ class _TowerStructurePanelState extends State<TowerStructurePanel> {
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
-                          widget.selectedCircuit!.circuitId,
+                          (widget.tower.summary.circuitCount == 1 || widget.tower.circuits.length == 1)
+                              ? 'Circuit'
+                              : widget.selectedCircuit!.circuitId,
                           style: const TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.bold,
@@ -181,12 +202,12 @@ class _TowerStructurePanelState extends State<TowerStructurePanel> {
                     final boxW = constraints.maxWidth;
                     final boxH = constraints.maxHeight;
 
-                    final scaleX = boxW / _cropWidth;
-                    final scaleY = boxH / _cropHeight;
+                    final scaleX = boxW / cropWidth;
+                    final scaleY = boxH / cropHeight;
                     final scale = scaleX < scaleY ? scaleX : scaleY;
 
-                    final renderW = _cropWidth * scale;
-                    final renderH = _cropHeight * scale;
+                    final renderW = cropWidth * scale;
+                    final renderH = cropHeight * scale;
 
                     return Center(
                       child: SizedBox(
@@ -197,10 +218,10 @@ class _TowerStructurePanelState extends State<TowerStructurePanel> {
                             children: [
                               // 1. Cropped & Scaled Base Tower Photo
                               Positioned(
-                                left: -_cropLeft * scale,
-                                top: -_cropTop * scale,
-                                width: 1920.0 * scale,
-                                height: 1080.0 * scale,
+                                left: -cropLeft * scale,
+                                top: -cropTop * scale,
+                                width: rawW * scale,
+                                height: rawH * scale,
                                 child: ImageService.buildImage(
                                   imagePath: imagePath,
                                   fit: BoxFit.fill,
@@ -213,8 +234,13 @@ class _TowerStructurePanelState extends State<TowerStructurePanel> {
                                   child: CustomPaint(
                                     painter: _SelectiveTowerPainter(
                                       scale: scale,
+                                      cropLeft: cropLeft,
+                                      cropTop: cropTop,
+                                      towerBbox: bbox,
                                       selectedCircuit: widget.selectedCircuit!,
                                       selectedPhase: widget.selectedPhase,
+                                      isSingleCircuit: widget.tower.summary.circuitCount == 1 ||
+                                          widget.tower.circuits.length == 1,
                                     ),
                                   ),
                                 ),
@@ -355,38 +381,51 @@ class _TowerStructurePanelState extends State<TowerStructurePanel> {
 
 class _SelectiveTowerPainter extends CustomPainter {
   final double scale;
+  final double cropLeft;
+  final double cropTop;
+  final List<double> towerBbox;
   final Circuit selectedCircuit;
   final Phase? selectedPhase;
+  final bool isSingleCircuit;
 
   _SelectiveTowerPainter({
     required this.scale,
+    required this.cropLeft,
+    required this.cropTop,
+    required this.towerBbox,
     required this.selectedCircuit,
     required this.selectedPhase,
+    this.isSingleCircuit = false,
   });
 
-  static const double _cropLeft = 620.0;
-  static const double _cropTop = 130.0;
-
-  double _toX(double x) => (x - _cropLeft) * scale;
-  double _toY(double y) => (y - _cropTop) * scale;
+  double _toX(double x) => (x - cropLeft) * scale;
+  double _toY(double y) => (y - cropTop) * scale;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final isSW = selectedCircuit.circuitId.contains('SW');
-
-    // Circuit bounding box:
-    // SW: [756.2, 264.6, 38.3, 368.2]
-    // NE: [1070.5, 285.5, 33.3, 377.3]
-    final bbox = isSW
-        ? const [756.2, 264.6, 38.3, 368.2]
-        : const [1070.5, 285.5, 33.3, 377.3];
-
-    final rect = Rect.fromLTWH(
-      _toX(bbox[0]),
-      _toY(bbox[1]),
-      bbox[2] * scale,
-      bbox[3] * scale,
-    );
+    // 1. Circuit bounding box (use selectedCircuit.bbox if available)
+    final cb = selectedCircuit.bbox;
+    Rect? circuitRect;
+    if (cb.length >= 4 && cb[2] > 0 && cb[3] > 0) {
+      circuitRect = Rect.fromLTWH(
+        _toX(cb[0]),
+        _toY(cb[1]),
+        cb[2] * scale,
+        cb[3] * scale,
+      );
+    } else {
+      // Fallback if circuit bbox is empty
+      final isSW = selectedCircuit.circuitId.contains('SW');
+      final fallbackBbox = isSW
+          ? const [756.2, 264.6, 38.3, 368.2]
+          : const [1070.5, 285.5, 33.3, 377.3];
+      circuitRect = Rect.fromLTWH(
+        _toX(fallbackBbox[0]),
+        _toY(fallbackBbox[1]),
+        fallbackBbox[2] * scale,
+        fallbackBbox[3] * scale,
+      );
+    }
 
     // 1. Blue Bounding Box
     final borderPaint = Paint()
@@ -394,10 +433,10 @@ class _SelectiveTowerPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2.2;
 
-    canvas.drawRect(rect, borderPaint);
+    canvas.drawRect(circuitRect, borderPaint);
 
-    // 2. Solid Blue Tag at bottom of box: Circuit_SW or Circuit_NE
-    final tagText = selectedCircuit.circuitId;
+    // 2. Solid Blue Tag at bottom of box
+    final tagText = isSingleCircuit ? 'Circuit' : selectedCircuit.circuitId;
     final tagPainter = TextPainter(
       text: TextSpan(
         text: tagText,
@@ -412,77 +451,62 @@ class _SelectiveTowerPainter extends CustomPainter {
 
     final tagBgRect = RRect.fromRectAndRadius(
       Rect.fromLTWH(
-        rect.left - 6,
-        rect.bottom - 4,
+        circuitRect.left - 6,
+        circuitRect.bottom - 4,
         tagPainter.width + 12,
         tagPainter.height + 6,
       ),
       const Radius.circular(3),
     );
     canvas.drawRRect(tagBgRect, Paint()..color = const Color(0xFF1967D2));
-    tagPainter.paint(canvas, Offset(rect.left, rect.bottom - 1));
+    tagPainter.paint(canvas, Offset(circuitRect.left, circuitRect.bottom - 1));
 
     // 3. Phase indicators dynamically positioned for the selected circuit
-    final double yR;
-    final double yY;
-    final double yB;
-    final double nodeX;
-    final double letterX;
+    final double towerCenterX = towerBbox.length >= 3
+        ? _toX(towerBbox[0] + towerBbox[2] / 2.0)
+        : size.width / 2.0;
 
-    if (isSW) {
-      // SW arm insulator positions
-      nodeX = _toX(775.35);
-      letterX = nodeX - 22;
-      yR = _toY(295.0);
-      yY = _toY(448.0);
-      yB = _toY(600.0);
-    } else {
-      // NE arm insulator positions
-      nodeX = _toX(1087.15);
-      letterX = nodeX + 18;
-      yR = _toY(289.7);
-      yY = _toY(455.2);
-      yB = _toY(593.9);
+    final phases = selectedCircuit.phases;
+
+    void drawPhase(String name, Color dotColor, double defaultXOffset, double defaultYFrac) {
+      final p = phases[name];
+      double nodeX;
+      double nodeY;
+
+      if (p?.keypoint != null) {
+        nodeX = _toX(p!.keypoint!.x);
+        nodeY = _toY(p.keypoint!.y);
+      } else {
+        // Fallback positioning based on circuit and arm
+        final isLeft = selectedCircuit.circuitId.contains('SW') ||
+            selectedCircuit.circuitId.contains('NW') ||
+            selectedCircuit.circuitId.contains('W') ||
+            selectedCircuit.circuitId.contains('S');
+        final double baseBx = towerBbox.isNotEmpty ? towerBbox[0] : 760.0;
+        final double baseBy = towerBbox.length > 1 ? towerBbox[1] : 180.0;
+        final double baseBw = towerBbox.length > 2 ? towerBbox[2] : 340.0;
+        final double baseBh = towerBbox.length > 3 ? towerBbox[3] : 720.0;
+        nodeX = isLeft ? _toX(baseBx + defaultXOffset) : _toX(baseBx + baseBw - defaultXOffset);
+        nodeY = _toY(baseBy + baseBh * defaultYFrac);
+      }
+
+      final letterX = nodeX < towerCenterX ? nodeX - 22 : nodeX + 18;
+      final isSelected = selectedPhase?.phaseName == name;
+      final hasDefect = (p != null) ? p.defectCount > 0 : false;
+
+      _drawPhaseLetter(canvas, name, letterX, nodeY);
+      _drawPhaseNode(
+        canvas: canvas,
+        center: Offset(nodeX, nodeY),
+        isSelected: isSelected,
+        hasDefect: hasDefect,
+        dotColor: dotColor,
+      );
     }
 
-    final isRSelected = selectedPhase?.phaseName == 'R';
-    final isYSelected = selectedPhase?.phaseName == 'Y';
-    final isBSelected = selectedPhase?.phaseName == 'B';
-
-    // Derive phase defects dynamically from JSON inspection data
-    final rHasDefect = selectedCircuit.phases['R']?.images.any((img) => img.hasDefect) ?? isSW;
-    final yHasDefect = selectedCircuit.phases['Y']?.images.any((img) => img.hasDefect) ?? false;
-    final bHasDefect = selectedCircuit.phases['B']?.images.any((img) => img.hasDefect) ?? isSW;
-
-    // Phase R (Red Dot with white ring)
-    _drawPhaseLetter(canvas, 'R', letterX, yR);
-    _drawPhaseNode(
-      canvas: canvas,
-      center: Offset(nodeX, yR),
-      isSelected: isRSelected,
-      hasDefect: rHasDefect,
-      dotColor: const Color(0xFFEF4444),
-    );
-
-    // Phase Y (Yellow Dot with white ring)
-    _drawPhaseLetter(canvas, 'Y', letterX, yY);
-    _drawPhaseNode(
-      canvas: canvas,
-      center: Offset(nodeX, yY),
-      isSelected: isYSelected,
-      hasDefect: yHasDefect,
-      dotColor: const Color(0xFFEAB308),
-    );
-
-    // Phase B (Blue Dot with white ring)
-    _drawPhaseLetter(canvas, 'B', letterX, yB);
-    _drawPhaseNode(
-      canvas: canvas,
-      center: Offset(nodeX, yB),
-      isSelected: isBSelected,
-      hasDefect: bHasDefect,
-      dotColor: const Color(0xFF2563EB),
-    );
+    drawPhase('R', const Color(0xFFEF4444), 15.0, 0.20);
+    drawPhase('Y', const Color(0xFFEAB308), 20.0, 0.40);
+    drawPhase('B', const Color(0xFF2563EB), 22.0, 0.60);
   }
 
   void _drawPhaseLetter(Canvas canvas, String letter, double x, double y) {
@@ -594,6 +618,8 @@ class _SelectiveTowerPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _SelectiveTowerPainter oldDelegate) {
     return oldDelegate.scale != scale ||
+        oldDelegate.cropLeft != cropLeft ||
+        oldDelegate.cropTop != cropTop ||
         oldDelegate.selectedCircuit != selectedCircuit ||
         oldDelegate.selectedPhase != selectedPhase;
   }

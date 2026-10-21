@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../config/app_theme.dart';
 import '../models/inspection_model.dart';
 import '../services/report_service.dart';
+import '../services/tower_registry.dart';
 import 'transmission_tower_icon.dart';
 
 class AssetNavigatorPanel extends StatefulWidget {
@@ -52,11 +53,17 @@ class _AssetNavigatorPanelState extends State<AssetNavigatorPanel> {
   @override
   void didUpdateWidget(covariant AssetNavigatorPanel oldWidget) {
     super.didUpdateWidget(oldWidget);
+    final isSingleCircuit = widget.tower.circuits.length == 1 || widget.tower.summary.circuitCount == 1;
     if (widget.selectedAssetType != oldWidget.selectedAssetType) {
       _showSummary = false;
       if (widget.selectedAssetType != null && oldWidget.selectedAssetType == null) {
         _isAssetTypeDropdownOpen = false;
-        _isCircuitDropdownOpen = true;
+        if (isSingleCircuit) {
+          _isCircuitDropdownOpen = false;
+          _isPhaseDropdownOpen = true;
+        } else {
+          _isCircuitDropdownOpen = true;
+        }
       } else if (widget.selectedAssetType == null) {
         _isAssetTypeDropdownOpen = false;
         _isCircuitDropdownOpen = false;
@@ -84,6 +91,11 @@ class _AssetNavigatorPanelState extends State<AssetNavigatorPanel> {
 
   @override
   Widget build(BuildContext context) {
+    final towerDef = TowerRegistry.getTower(widget.tower.towerId);
+    final lineLabel = '${towerDef?.voltage ?? '400 kV'} · ${towerDef?.site ?? 'Site B'}';
+    final towerLabel = towerDef?.displayCode ?? widget.tower.towerId;
+    final isSingleCircuit = widget.tower.circuits.length == 1 || widget.tower.summary.circuitCount == 1;
+
     return Container(
       width: widget.width ?? 320,
       decoration: const BoxDecoration(
@@ -134,16 +146,17 @@ class _AssetNavigatorPanelState extends State<AssetNavigatorPanel> {
           const SizedBox(height: 14),
 
           // --- TREE STRUCTURE (LINE -> TOWER -> ASSET TYPE -> CIRCUIT -> PHASE) ---
-          // Node 1: LINE (400KV · Site B)
+
+          // Node 1: LINE
           _buildTreeNode(
             label: 'LINE',
-            content: const Row(
+            content: Row(
               children: [
-                Icon(Icons.waves, size: 16, color: Color(0xFF475569)),
-                SizedBox(width: 8),
+                const Icon(Icons.waves, size: 16, color: Color(0xFF475569)),
+                const SizedBox(width: 8),
                 Text(
-                  '400KV · Site B',
-                  style: TextStyle(
+                  lineLabel,
+                  style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.bold,
                     color: AppColors.textPrimary,
@@ -155,7 +168,7 @@ class _AssetNavigatorPanelState extends State<AssetNavigatorPanel> {
             depth: 0,
           ),
 
-          // Node 2: TOWER (T01-400KV-SB)
+          // Node 2: TOWER
           _buildTreeNode(
             label: 'TOWER',
             content: Row(
@@ -163,7 +176,7 @@ class _AssetNavigatorPanelState extends State<AssetNavigatorPanel> {
                 const TransmissionTowerIcon(size: 16, color: Color(0xFF475569)),
                 const SizedBox(width: 8),
                 Text(
-                  widget.tower.towerId,
+                  towerLabel,
                   style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.bold,
@@ -177,15 +190,15 @@ class _AssetNavigatorPanelState extends State<AssetNavigatorPanel> {
           ),
 
           // Node 3: ASSET TYPE (always shown)
-          _buildAssetTypeTreeNode(),
+          _buildAssetTypeTreeNode(isSingleCircuit: isSingleCircuit),
 
-          // Node 4: CIRCUIT (only shown after Asset Type is selected)
-          if (widget.selectedAssetType != null)
+          // Node 4: CIRCUIT (only shown after Asset Type is selected for multi-circuit towers)
+          if (widget.selectedAssetType != null && !isSingleCircuit)
             _buildCircuitTreeNode(),
 
-          // Node 5: PHASE (only shown after Circuit is selected)
+          // Node 5 (or 4 for single-circuit): PHASE (only shown after Circuit is selected)
           if (widget.selectedCircuit != null)
-            _buildPhaseTreeNode(),
+            _buildPhaseTreeNode(isSingleCircuit: isSingleCircuit),
 
           // Action Buttons: Summary & Report (shown when Phase is selected)
           if (widget.selectedCircuit != null && widget.selectedPhase != null) ...[
@@ -222,7 +235,7 @@ class _AssetNavigatorPanelState extends State<AssetNavigatorPanel> {
                     height: 38,
                     child: ElevatedButton.icon(
                       onPressed: () {
-                        ReportService.downloadReport(context);
+                        ReportService.downloadReport(context, towerId: widget.tower.towerId);
                       },
                       icon: const Icon(Icons.description_outlined, size: 16),
                       label: const Text(
@@ -255,7 +268,7 @@ class _AssetNavigatorPanelState extends State<AssetNavigatorPanel> {
   }
 
   /// Node 3: ASSET TYPE dropdown (Image 1)
-  Widget _buildAssetTypeTreeNode() {
+  Widget _buildAssetTypeTreeNode({bool isSingleCircuit = false}) {
     final isOpen = _isAssetTypeDropdownOpen;
     final isSelected = widget.selectedAssetType != null;
     final displayText = widget.selectedAssetType ?? 'Select';
@@ -341,9 +354,13 @@ class _AssetNavigatorPanelState extends State<AssetNavigatorPanel> {
                       child: InkWell(
                         onTap: () {
                           widget.onSelectAssetType('Circuit');
+                          if (isSingleCircuit && widget.tower.circuits.isNotEmpty) {
+                            widget.onSelectCircuit(widget.tower.circuits.first);
+                          }
                           setState(() {
                             _isAssetTypeDropdownOpen = false;
-                            _isCircuitDropdownOpen = true;
+                            _isCircuitDropdownOpen = !isSingleCircuit;
+                            _isPhaseDropdownOpen = isSingleCircuit;
                             _showSummary = false;
                           });
                         },
@@ -475,15 +492,14 @@ class _AssetNavigatorPanelState extends State<AssetNavigatorPanel> {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         mainAxisSize: MainAxisSize.min,
                         children: widget.tower.circuits.map((c) {
-                          final isItemActive = widget.selectedCircuit?.circuitId == c.circuitId ||
-                              (widget.selectedCircuit == null && c == widget.tower.circuits.first);
+                          final isItemActive = widget.selectedCircuit?.circuitId == c.circuitId;
 
                           return InkWell(
                             onTap: () {
                               widget.onSelectCircuit(c);
                               setState(() {
                                 _isCircuitDropdownOpen = false;
-                                _isPhaseDropdownOpen = false;
+                                _isPhaseDropdownOpen = true;
                                 _showSummary = false;
                               });
                             },
@@ -517,7 +533,7 @@ class _AssetNavigatorPanelState extends State<AssetNavigatorPanel> {
   }
 
   /// Node 5: PHASE dropdown (Image 3)
-  Widget _buildPhaseTreeNode() {
+  Widget _buildPhaseTreeNode({bool isSingleCircuit = false}) {
     final hasPhase = widget.selectedPhase != null;
     final phaseDisplayText = hasPhase ? 'Phase-${widget.selectedPhase!.phaseName}' : 'Select';
     final isOpen = _isPhaseDropdownOpen;
@@ -526,9 +542,9 @@ class _AssetNavigatorPanelState extends State<AssetNavigatorPanel> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const SizedBox(
-            width: 18.0 * 4,
-            child: CustomPaint(
+          SizedBox(
+            width: 18.0 * (isSingleCircuit ? 3 : 4),
+            child: const CustomPaint(
               painter: _TreeBranchPainter(isLastChild: true),
             ),
           ),
@@ -802,7 +818,9 @@ class _AssetNavigatorPanelState extends State<AssetNavigatorPanel> {
               ),
               const Spacer(),
               Text(
-                widget.selectedCircuit?.circuitId ?? '',
+                (widget.tower.circuits.length == 1 || widget.tower.summary.circuitCount == 1)
+                    ? 'Circuit'
+                    : (widget.selectedCircuit?.circuitId ?? ''),
                 style: const TextStyle(
                   fontSize: 11,
                   color: Color(0xFF64748B),
