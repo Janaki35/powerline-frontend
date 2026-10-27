@@ -29,6 +29,8 @@ class AppState extends ChangeNotifier {
   static const String _keySelectedTowerId = 'towerlens_selected_tower_id';
   static const String _keySelectedCircuitId = 'towerlens_selected_circuit_id';
   static const String _keySelectedPhaseName = 'towerlens_selected_phase_name';
+  static const String _keySelectedCorridorTop = 'towerlens_selected_corridor_top';
+  static const String _keySelectedCorridorBottom = 'towerlens_selected_corridor_bottom';
 
   bool _isInitialized = false;
   bool get isInitialized => _isInitialized;
@@ -60,10 +62,26 @@ class AppState extends ChangeNotifier {
   String? _selectedCorridorBottom;
   String? get selectedCorridorBottom => _selectedCorridorBottom;
 
-  void setSelectedCorridor(String? top, String? bottom) {
+  Future<void> setSelectedCorridor(String? top, String? bottom) async {
     _selectedCorridorTop = top;
     _selectedCorridorBottom = bottom;
     notifyListeners();
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (top != null) {
+        await prefs.setString(_keySelectedCorridorTop, top);
+      } else {
+        await prefs.remove(_keySelectedCorridorTop);
+      }
+      if (bottom != null) {
+        await prefs.setString(_keySelectedCorridorBottom, bottom);
+      } else {
+        await prefs.remove(_keySelectedCorridorBottom);
+      }
+    } catch (e) {
+      debugPrint('Error saving selected corridor: $e');
+    }
   }
 
   /// Loads the saved session when the website starts or refreshes (F5 / ↻).
@@ -87,6 +105,8 @@ class AppState extends ChangeNotifier {
         _selectedTowerId = prefs.getString(_keySelectedTowerId) ?? 'T01-400KV-SA';
         _selectedCircuitId = prefs.getString(_keySelectedCircuitId);
         _selectedPhaseName = prefs.getString(_keySelectedPhaseName);
+        _selectedCorridorTop = prefs.getString(_keySelectedCorridorTop);
+        _selectedCorridorBottom = prefs.getString(_keySelectedCorridorBottom);
       } else {
         _currentView = AppView.signIn;
       }
@@ -211,11 +231,17 @@ class AppState extends ChangeNotifier {
   Future<void> setSelectedDate(String date) async {
     if (_selectedDate == date) return;
     _selectedDate = date;
+    _selectedVoltage = 'All voltages';
+    _selectedCorridorTop = null;
+    _selectedCorridorBottom = null;
     notifyListeners();
 
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_keySelectedDate, date);
+      await prefs.setString(_keySelectedVoltage, 'All voltages');
+      await prefs.remove(_keySelectedCorridorTop);
+      await prefs.remove(_keySelectedCorridorBottom);
     } catch (e) {
       debugPrint('Error saving selected date: $e');
     }

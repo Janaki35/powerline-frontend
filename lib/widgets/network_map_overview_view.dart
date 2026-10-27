@@ -473,10 +473,15 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
     if (widget.returnFromInspection && widget.initialTowerId != null && widget.initialTowerId!.isNotEmpty) {
       _focusOnTower(widget.initialTowerId!);
     } else {
-      // Find towers matching the initial active date and voltage
-      final matchingTowers = _allMapTowers.where((t) =>
-          (_selectedDate == 'All dates' || t.surveyDate == _selectedDate) &&
-          (_selectedVoltage == 'All voltages' || t.voltage == _selectedVoltage)).toList();
+      // Find towers matching the initial active date and voltage (and corridor if specified)
+      final matchingTowers = _allMapTowers.where((t) {
+        if (_selectedDate != 'All dates' && t.surveyDate != _selectedDate) return false;
+        if (_selectedVoltage != 'All voltages' && t.voltage != _selectedVoltage) return false;
+        if (_selectedVoltage != 'All voltages' && _selectedCorridorBottom != null && _selectedCorridorBottom != _selectedVoltage) {
+          if (!_towerMatchesCorridor(t, _selectedCorridorBottom!)) return false;
+        }
+        return true;
+      }).toList();
 
       if (widget.initialTowerId != null && widget.initialTowerId!.isNotEmpty) {
         final match = matchingTowers.where((t) => t.id == widget.initialTowerId);
@@ -576,6 +581,12 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
   void didUpdateWidget(NetworkMapOverviewView oldWidget) {
     super.didUpdateWidget(oldWidget);
     _syncTowerStatus();
+    if (widget.initialCorridorBottom != null && widget.initialCorridorBottom != _selectedCorridorBottom) {
+      _selectedCorridorBottom = widget.initialCorridorBottom;
+    }
+    if (widget.initialCorridorTop != null && widget.initialCorridorTop != _selectedCorridorTop) {
+      _selectedCorridorTop = widget.initialCorridorTop;
+    }
     if (widget.returnFromInspection &&
         widget.initialTowerId != null &&
         widget.initialTowerId!.isNotEmpty &&
@@ -694,6 +705,38 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
     });
   }
 
+  bool _towerMatchesCorridor(MapTower tower, String corridorBottom) {
+    final target = corridorBottom.trim().toLowerCase();
+    if (target.isEmpty || target == _selectedVoltage.toLowerCase()) return true;
+
+    final info = TowerCorridorService.getInfo(tower.name);
+    final toSub = (info?.toSubstation ?? '').trim().toLowerCase();
+    final site = tower.site.trim().toLowerCase();
+    final arrow = (info?.corridorArrow ?? '').trim().toLowerCase();
+
+    // Direct equality
+    if (toSub == target || site == target) return true;
+
+    // Normalized comparison stripping punctuation/spaces (e.g., "duburi (old)" vs "duburi(old)")
+    final normTarget = target.replaceAll(RegExp(r'[^a-z0-9]'), '');
+    final normToSub = toSub.replaceAll(RegExp(r'[^a-z0-9]'), '');
+    final normSite = site.replaceAll(RegExp(r'[^a-z0-9]'), '');
+    final normArrow = arrow.replaceAll(RegExp(r'[^a-z0-9]'), '');
+
+    if (normTarget.isEmpty) return true;
+    if (normToSub.isNotEmpty && (normToSub == normTarget || normToSub.contains(normTarget) || normTarget.contains(normToSub))) {
+      return true;
+    }
+    if (normSite.isNotEmpty && (normSite == normTarget || normSite.contains(normTarget) || normTarget.contains(normSite))) {
+      return true;
+    }
+    if (normArrow.isNotEmpty && (normArrow.contains(normTarget) || normTarget.contains(normArrow))) {
+      return true;
+    }
+
+    return false;
+  }
+
   List<MapTower> get _filteredTowers {
     final list = _allMapTowers.where((tower) {
       if (_selectedDate != 'All dates' && tower.surveyDate != _selectedDate) {
@@ -701,6 +744,11 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
       }
       if (_selectedVoltage != 'All voltages' && tower.voltage != _selectedVoltage) {
         return false;
+      }
+      if (_selectedVoltage != 'All voltages' && _selectedCorridorBottom != null && _selectedCorridorBottom != _selectedVoltage) {
+        if (!_towerMatchesCorridor(tower, _selectedCorridorBottom!)) {
+          return false;
+        }
       }
       return true;
     }).toList();
@@ -2926,6 +2974,9 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
         final site = towers.first.site;
         final subtitle = '$site · ${towers.length} towers';
         final toName = arrow.contains(' → ') ? arrow.split(' → ').last.trim() : (info?.toSubstation ?? site);
+        final isCorridorActive = isSelected &&
+            _selectedCorridorBottom != null &&
+            _towerMatchesCorridor(towers.first, _selectedCorridorBottom!);
 
         corridorCards.add(
           Padding(
@@ -2933,27 +2984,39 @@ class _NetworkMapOverviewViewState extends State<NetworkMapOverviewView> {
             child: InkWell(
               onTap: () => _selectVoltage(voltage, towers, arrow, toName),
               borderRadius: BorderRadius.circular(4),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 2),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: isCorridorActive ? const Color(0xFFE8F0FE) : Colors.transparent,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 4),
+                child: Row(
                   children: [
-                    Text(
-                      arrow,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF1E293B),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            arrow,
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: isCorridorActive ? const Color(0xFF1E60B5) : const Color(0xFF1E293B),
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            subtitle,
+                            style: TextStyle(
+                              fontSize: 10.5,
+                              color: isCorridorActive ? const Color(0xFF1E60B5) : const Color(0xFF64748B),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle,
-                      style: const TextStyle(
-                        fontSize: 10.5,
-                        color: Color(0xFF64748B),
-                      ),
-                    ),
+                    if (isCorridorActive)
+                      const Icon(Icons.check, size: 14, color: Color(0xFF1E60B5)),
                   ],
                 ),
               ),
