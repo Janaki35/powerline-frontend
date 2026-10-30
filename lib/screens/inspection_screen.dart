@@ -26,6 +26,8 @@ class _InspectionScreenState extends State<InspectionScreen> {
   String? _selectedAssetType;
   Circuit? _selectedCircuit;
   Phase? _selectedPhase;
+  // Currently selected earthing peak (for earthing peak inspection)
+  EarthPeak? _selectedEarthPeak;
   bool _isLoading = true;
   String? _errorMessage;
 
@@ -203,7 +205,8 @@ class _InspectionScreenState extends State<InspectionScreen> {
     final tower = _inspectionData!.tower;
 
     // Restore saved circuit & phase if website was refreshed while on the 2nd page
-    if (_selectedCircuit == null && appState.selectedCircuitId != null) {
+    // Important: Do not restore if user chose Earthing peak as the asset type
+    if (_selectedAssetType != 'Earthing peak' && _selectedCircuit == null && appState.selectedCircuitId != null) {
       final match = tower.circuits
           .where((c) => c.circuitId == appState.selectedCircuitId);
       if (match.isNotEmpty) {
@@ -352,14 +355,30 @@ class _InspectionScreenState extends State<InspectionScreen> {
                         selectedAssetType: _selectedAssetType,
                         selectedCircuit: _selectedCircuit,
                         selectedPhase: _selectedPhase,
+                        selectedEarthPeak: _selectedEarthPeak,
                         onSelectAssetType: (type) {
                           final isSingle = tower.summary.circuitCount == 1 || tower.circuits.length == 1;
                           setState(() {
                             _selectedAssetType = type;
-                            _selectedCircuit = (isSingle && tower.circuits.isNotEmpty) ? tower.circuits.first : null;
-                            _selectedPhase = null;
+                            if (type == 'Earthing peak') {
+                              // Reset circuit and phase when earthing peak is chosen
+                              _selectedCircuit = null;
+                              _selectedPhase = null;
+                              // Initially no specific peak is selected so BOTH are highlighted on tower
+                              _selectedEarthPeak = null;
+                            } else {
+                              _selectedEarthPeak = null;
+                              _selectedCircuit = (isSingle && tower.circuits.isNotEmpty) ? tower.circuits.first : null;
+                              _selectedPhase = null;
+                            }
                           });
-                          if (isSingle && tower.circuits.isNotEmpty) {
+                          // Clear saved circuit and phase in app state when switching to earthing peak
+                          if (type == 'Earthing peak') {
+                            appState.navigateToInspection(
+                              circuitId: null,
+                              phaseName: null,
+                            );
+                          } else if (isSingle && tower.circuits.isNotEmpty) {
                             appState.navigateToInspection(
                               circuitId: tower.circuits.first.circuitId,
                               phaseName: null,
@@ -370,6 +389,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
                           setState(() {
                             _selectedCircuit = c;
                             _selectedPhase = null;
+                            _selectedEarthPeak = null;
                           });
                           // Save selection to AppState for browser refresh persistence
                           appState.navigateToInspection(
@@ -380,11 +400,25 @@ class _InspectionScreenState extends State<InspectionScreen> {
                         onSelectPhase: (p) {
                           setState(() {
                             _selectedPhase = p;
+                            _selectedEarthPeak = null;
                           });
                           // Save selection to AppState for browser refresh persistence
                           appState.navigateToInspection(
                             circuitId: _selectedCircuit?.circuitId,
                             phaseName: p.phaseName,
+                          );
+                        },
+                        onSelectEarthPeak: (ep) {
+                          setState(() {
+                            _selectedAssetType = 'Earthing peak';
+                            _selectedEarthPeak = ep;
+                            _selectedCircuit = null;
+                            _selectedPhase = null;
+                          });
+                          // Clear saved circuit and phase in app state so they do not conflict
+                          appState.navigateToInspection(
+                            circuitId: null,
+                            phaseName: null,
                           );
                         },
                         onBackToMap: () {
@@ -396,13 +430,16 @@ class _InspectionScreenState extends State<InspectionScreen> {
                       TowerStructurePanel(
                         width: structWidth,
                         tower: tower,
+                        selectedAssetType: _selectedAssetType,
                         selectedCircuit: _selectedCircuit,
                         selectedPhase: _selectedPhase,
+                        selectedEarthPeak: _selectedEarthPeak,
                         onSelectCircuit: (c) {
                           setState(() {
                             _selectedAssetType = 'Circuit';
                             _selectedCircuit = c;
                             _selectedPhase = null;
+                            _selectedEarthPeak = null;
                           });
                           // Save selection to AppState for browser refresh persistence
                           appState.navigateToInspection(
@@ -414,6 +451,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
                           setState(() {
                             _selectedAssetType = 'Circuit';
                             _selectedPhase = p;
+                            _selectedEarthPeak = null;
                           });
                           // Save selection to AppState for browser refresh persistence
                           appState.navigateToInspection(
@@ -421,13 +459,29 @@ class _InspectionScreenState extends State<InspectionScreen> {
                             phaseName: p.phaseName,
                           );
                         },
+                        onSelectEarthPeak: (ep) {
+                          // Tap on tower structure selects this earthing peak
+                          setState(() {
+                            _selectedAssetType = 'Earthing peak';
+                            _selectedEarthPeak = ep;
+                            _selectedCircuit = null;
+                            _selectedPhase = null;
+                          });
+                          // Clear saved circuit and phase in app state
+                          appState.navigateToInspection(
+                            circuitId: null,
+                            phaseName: null,
+                          );
+                        },
                       ),
 
-                      // Column 3: Phase Inspection & Detailed Crops (Expanded)
+                      // Column 3: Inspection & Detailed Crops (Expanded)
                       Expanded(
                         child: PhaseInspectionView(
+                          selectedAssetType: _selectedAssetType,
                           phase: _selectedPhase,
                           circuit: _selectedCircuit,
+                          earthPeak: _selectedEarthPeak,
                         ),
                       ),
                     ],
@@ -505,14 +559,28 @@ class _InspectionScreenState extends State<InspectionScreen> {
                     selectedAssetType: _selectedAssetType,
                     selectedCircuit: _selectedCircuit,
                     selectedPhase: _selectedPhase,
+                    selectedEarthPeak: _selectedEarthPeak,
                     onSelectAssetType: (type) {
                       final isSingle = tower.summary.circuitCount == 1 || tower.circuits.length == 1;
                       setState(() {
                         _selectedAssetType = type;
-                        _selectedCircuit = (isSingle && tower.circuits.isNotEmpty) ? tower.circuits.first : null;
-                        _selectedPhase = null;
+                        if (type == 'Earthing peak') {
+                          _selectedCircuit = null;
+                          _selectedPhase = null;
+                          _selectedEarthPeak = null;
+                        } else {
+                          _selectedEarthPeak = null;
+                          _selectedCircuit = (isSingle && tower.circuits.isNotEmpty) ? tower.circuits.first : null;
+                          _selectedPhase = null;
+                        }
                       });
-                      if (isSingle && tower.circuits.isNotEmpty) {
+                      // Clear saved circuit and phase in app state when switching to earthing peak
+                      if (type == 'Earthing peak') {
+                        appState.navigateToInspection(
+                          circuitId: null,
+                          phaseName: null,
+                        );
+                      } else if (isSingle && tower.circuits.isNotEmpty) {
                         appState.navigateToInspection(
                           circuitId: tower.circuits.first.circuitId,
                           phaseName: null,
@@ -523,6 +591,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
                       setState(() {
                         _selectedCircuit = c;
                         _selectedPhase = null;
+                        _selectedEarthPeak = null;
                       });
                       appState.navigateToInspection(
                         circuitId: c.circuitId,
@@ -530,10 +599,26 @@ class _InspectionScreenState extends State<InspectionScreen> {
                       );
                     },
                     onSelectPhase: (p) {
-                      setState(() => _selectedPhase = p);
+                      setState(() {
+                        _selectedPhase = p;
+                        _selectedEarthPeak = null;
+                      });
                       appState.navigateToInspection(
                         circuitId: _selectedCircuit?.circuitId,
                         phaseName: p.phaseName,
+                      );
+                    },
+                    onSelectEarthPeak: (ep) {
+                      setState(() {
+                        _selectedAssetType = 'Earthing peak';
+                        _selectedEarthPeak = ep;
+                        _selectedCircuit = null;
+                        _selectedPhase = null;
+                      });
+                      // Clear saved circuit and phase in app state
+                      appState.navigateToInspection(
+                        circuitId: null,
+                        phaseName: null,
                       );
                     },
                     onBackToMap: () => appState.navigateToMap(returnTowerId: _loadedTowerId ?? appState.selectedTowerId),
@@ -541,13 +626,16 @@ class _InspectionScreenState extends State<InspectionScreen> {
                   TowerStructurePanel(
                     width: double.infinity,
                     tower: tower,
+                    selectedAssetType: _selectedAssetType,
                     selectedCircuit: _selectedCircuit,
                     selectedPhase: _selectedPhase,
+                    selectedEarthPeak: _selectedEarthPeak,
                     onSelectCircuit: (c) {
                       setState(() {
                         _selectedAssetType = 'Circuit';
                         _selectedCircuit = c;
                         _selectedPhase = null;
+                        _selectedEarthPeak = null;
                       });
                       appState.navigateToInspection(
                         circuitId: c.circuitId,
@@ -558,16 +646,32 @@ class _InspectionScreenState extends State<InspectionScreen> {
                       setState(() {
                         _selectedAssetType = 'Circuit';
                         _selectedPhase = p;
+                        _selectedEarthPeak = null;
                       });
                       appState.navigateToInspection(
                         circuitId: _selectedCircuit?.circuitId,
                         phaseName: p.phaseName,
                       );
                     },
+                    onSelectEarthPeak: (ep) {
+                      setState(() {
+                        _selectedAssetType = 'Earthing peak';
+                        _selectedEarthPeak = ep;
+                        _selectedCircuit = null;
+                        _selectedPhase = null;
+                      });
+                      // Clear saved circuit and phase in app state
+                      appState.navigateToInspection(
+                        circuitId: null,
+                        phaseName: null,
+                      );
+                    },
                   ),
                   PhaseInspectionView(
+                    selectedAssetType: _selectedAssetType,
                     phase: _selectedPhase,
                     circuit: _selectedCircuit,
+                    earthPeak: _selectedEarthPeak,
                   ),
                 ],
               ),

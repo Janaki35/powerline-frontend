@@ -123,6 +123,8 @@ class Tower {
   final TowerDetection towerDetection;
   final TowerSummary summary;
   final List<Circuit> circuits;
+  // List of earthing peaks at the top of the tower (added for earthing peak inspection)
+  final List<EarthPeak> earthPeaks;
 
   Tower({
     required this.towerId,
@@ -131,6 +133,7 @@ class Tower {
     required this.towerDetection,
     required this.summary,
     required this.circuits,
+    this.earthPeaks = const [],
   });
 
   factory Tower.fromJson(Map<String, dynamic> json) {
@@ -139,6 +142,16 @@ class Tower {
       for (final c in json['circuits']) {
         if (c is Map<String, dynamic>) {
           circuitsList.add(Circuit.fromJson(c));
+        }
+      }
+    }
+
+    // Parse earthing peaks from the JSON data
+    final earthPeaksList = <EarthPeak>[];
+    if (json['earth_peaks'] is List) {
+      for (final ep in json['earth_peaks']) {
+        if (ep is Map<String, dynamic>) {
+          earthPeaksList.add(EarthPeak.fromJson(ep));
         }
       }
     }
@@ -153,7 +166,93 @@ class Tower {
       summary:
           TowerSummary.fromJson(json['summary'] as Map<String, dynamic>? ?? {}),
       circuits: circuitsList,
+      earthPeaks: earthPeaksList,
     );
+  }
+}
+
+/// Model representing an earthing peak (peak structure at the top of the tower)
+class EarthPeak {
+  // Unique identifier such as 'EarthPeak_SW' or 'EarthPeak_NE'
+  final String earthPeakId;
+  // Side of the tower, for example 'SW' or 'NE'
+  final String side;
+  // 2D position (x, y) on the tower structure image
+  final PhaseKeypoint? keypoint;
+  // Geographic GPS location and altitude
+  final TowerLocation? location;
+  // High-resolution inspection photos taken by the drone
+  final List<InspectionImage> images;
+
+  EarthPeak({
+    required this.earthPeakId,
+    required this.side,
+    required this.keypoint,
+    required this.location,
+    required this.images,
+  });
+
+  factory EarthPeak.fromJson(Map<String, dynamic> json) {
+    // Parse the 2D keypoint coordinates on the tower photo
+    PhaseKeypoint? kp;
+    if (json['keypoint'] is Map<String, dynamic>) {
+      kp = PhaseKeypoint.fromJson(json['keypoint'] as Map<String, dynamic>);
+    }
+
+    // Parse the geographic coordinates if present
+    TowerLocation? loc;
+    if (json['location'] is Map<String, dynamic>) {
+      loc = TowerLocation.fromJson(json['location'] as Map<String, dynamic>);
+    }
+
+    // Parse the list of inspection photos
+    final imgList = <InspectionImage>[];
+    if (json['images'] is List) {
+      for (final im in json['images']) {
+        if (im is Map<String, dynamic>) {
+          imgList.add(InspectionImage.fromJson(im));
+        }
+      }
+    }
+
+    return EarthPeak(
+      earthPeakId: json['earth_peak_id'] as String? ?? 'EarthPeak',
+      side: json['side'] as String? ?? '',
+      keypoint: kp,
+      location: loc,
+      images: imgList,
+    );
+  }
+
+  // Count of missing cotter pins or defects found on this earth peak
+  int get defectCount {
+    int count = 0;
+    for (final im in images) {
+      count += im.missingCotterPinCount;
+    }
+    return count;
+  }
+
+  // True if any critical defects exist on this peak
+  bool get isCritical => defectCount > 0;
+
+  // Calculates the count of each component detected across all images for this peak
+  Map<String, int> get componentCounts {
+    final counts = <String, int>{};
+    for (final im in images) {
+      im.componentDetections.forEach((type, list) {
+        counts[type] = (counts[type] ?? 0) + list.length;
+      });
+    }
+    return counts;
+  }
+
+  // Distance from drone to the tower in meters from the first image
+  double get distanceToTowerM {
+    if (images.isNotEmpty) {
+      return images.first.distanceToTowerM;
+    }
+    return 0.0;
   }
 }
 

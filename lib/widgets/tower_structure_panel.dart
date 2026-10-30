@@ -7,19 +7,27 @@ import '../services/tower_registry.dart';
 
 class TowerStructurePanel extends StatefulWidget {
   final Tower tower;
+  final String? selectedAssetType; // 'Circuit', 'Earthing peak', or null
   final Circuit? selectedCircuit;
   final Phase? selectedPhase;
+  // Currently selected earthing peak
+  final EarthPeak? selectedEarthPeak;
   final ValueChanged<Circuit>? onSelectCircuit;
   final ValueChanged<Phase>? onSelectPhase;
+  // Callback when user taps or selects an earthing peak
+  final ValueChanged<EarthPeak>? onSelectEarthPeak;
   final double? width;
 
   const TowerStructurePanel({
     super.key,
     required this.tower,
+    this.selectedAssetType,
     this.selectedCircuit,
     this.selectedPhase,
+    this.selectedEarthPeak,
     this.onSelectCircuit,
     this.onSelectPhase,
+    this.onSelectEarthPeak,
     this.width,
   });
 
@@ -96,13 +104,56 @@ class _TowerStructurePanelState extends State<TowerStructurePanel> {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          ' · $voltageText · $siteText',
+                          '${towerDef?.displayCode ?? widget.tower.towerId} · $voltageText · $siteText',
                           style: const TextStyle(
                             fontSize: 12.5,
                             color: Color(0xFF64748B),
                           ),
                         ),
                       ],
+                    ),
+                    // RGB / Thermal static toggle button matching earthingpeak.png
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: const Color(0xFFCBD5E1)),
+                      ),
+                      padding: const EdgeInsets.all(2),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF0B6BCB),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: const Text(
+                              'RGB',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: const Text(
+                              'Thermal',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                                color: Color(0xFF475569),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
@@ -145,8 +196,48 @@ class _TowerStructurePanelState extends State<TowerStructurePanel> {
                 ),
                 const SizedBox(height: 10),
 
-                // Subtitle label: WHOLE TOWER vs SELECTED CIRCUIT
-                if (!hasSelectedCircuit)
+                // Subtitle label: WHOLE TOWER, SELECTED EARTH POINT, or SELECTED CIRCUIT
+                if (widget.selectedAssetType == 'Earthing peak')
+                  if (widget.selectedEarthPeak != null)
+                    Row(
+                      children: [
+                        const Text(
+                          'SELECTED EARTH POINT',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF64748B),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF0E9AA7), // Teal badge matching earthingpeak.png
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            widget.selectedEarthPeak!.earthPeakId,
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ],
+                    )
+                  else
+                    const Text(
+                      'WHOLE TOWER',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF475569),
+                        letterSpacing: 0.5,
+                      ),
+                    )
+                else if (!hasSelectedCircuit)
                   const Text(
                     'WHOLE TOWER',
                     style: TextStyle(
@@ -213,7 +304,43 @@ class _TowerStructurePanelState extends State<TowerStructurePanel> {
                       child: SizedBox(
                         width: renderW,
                         height: renderH,
-                        child: IgnorePointer(
+                        child: GestureDetector(
+                          // Tap detection: allows user to select earthing peak directly on the tower
+                          behavior: HitTestBehavior.opaque,
+                          onTapUp: (details) {
+                            if (widget.selectedAssetType == 'Earthing peak') {
+                              final tapX = details.localPosition.dx;
+                              final tapY = details.localPosition.dy;
+                              for (final ep in widget.tower.earthPeaks) {
+                                double nodeX;
+                                double nodeY;
+                                if (ep.keypoint != null) {
+                                  nodeX = (ep.keypoint!.x - cropLeft) * scale;
+                                  nodeY = (ep.keypoint!.y - cropTop) * scale;
+                                } else {
+                                  // Fallback coordinates if keypoint is missing
+                                  final double baseBx = bbox.isNotEmpty ? bbox[0] : 760.0;
+                                  final double baseBy = bbox.length > 1 ? bbox[1] : 180.0;
+                                  final double baseBw = bbox.length > 2 ? bbox[2] : 340.0;
+                                  final isLeft = ep.side.contains('SW') || ep.side.contains('W');
+                                  nodeX = ((isLeft ? baseBx + 60 : baseBx + baseBw - 60) - cropLeft) * scale;
+                                  nodeY = (baseBy - cropTop) * scale;
+                                }
+
+                                final bool isLeft = ep.side.contains('SW') || ep.side.contains('W');
+                                final double labelX = isLeft ? nodeX - 28 : nodeX + 20;
+
+                                // Check tap distance to node or to side label
+                                final distToNodeSq = (tapX - nodeX) * (tapX - nodeX) + (tapY - nodeY) * (tapY - nodeY);
+                                final distToLabelSq = (tapX - labelX) * (tapX - labelX) + (tapY - nodeY) * (tapY - nodeY);
+
+                                if (distToNodeSq <= 36 * 36 || distToLabelSq <= 26 * 26) {
+                                  widget.onSelectEarthPeak?.call(ep);
+                                  break;
+                                }
+                              }
+                            }
+                          },
                           child: Stack(
                             children: [
                               // 1. Cropped & Scaled Base Tower Photo
@@ -228,8 +355,22 @@ class _TowerStructurePanelState extends State<TowerStructurePanel> {
                                 ),
                               ),
 
-                              // 2. Highlighting circuit and phases ONLY when a circuit is selected
-                              if (hasSelectedCircuit)
+                              // 2. Highlighting Earthing Peaks when Earthing Peak asset type is selected
+                              if (widget.selectedAssetType == 'Earthing peak')
+                                Positioned.fill(
+                                  child: CustomPaint(
+                                    painter: _EarthPeakTowerPainter(
+                                      scale: scale,
+                                      cropLeft: cropLeft,
+                                      cropTop: cropTop,
+                                      towerBbox: bbox,
+                                      earthPeaks: widget.tower.earthPeaks,
+                                      selectedEarthPeak: widget.selectedEarthPeak,
+                                    ),
+                                  ),
+                                )
+                              // 3. Highlighting circuit and phases when circuit is selected
+                              else if (hasSelectedCircuit)
                                 Positioned.fill(
                                   child: CustomPaint(
                                     painter: _SelectiveTowerPainter(
@@ -255,7 +396,7 @@ class _TowerStructurePanelState extends State<TowerStructurePanel> {
             ),
           ),
 
-          // Legend under Tower Image matching ui_designs/3.png
+          // Legend under Tower Image matching earthingpeak.png
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             decoration: const BoxDecoration(
@@ -268,26 +409,46 @@ class _TowerStructurePanelState extends State<TowerStructurePanel> {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Row 1: PHASE
-                Row(
-                  children: [
-                    const Text(
-                      'PHASE',
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF64748B),
-                        letterSpacing: 0.5,
+                // Row 1: EARTH POINT (when Earthing peak is selected) or PHASE
+                if (widget.selectedAssetType == 'Earthing peak')
+                  Row(
+                    children: [
+                      const Text(
+                        'EARTH POINT',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF64748B),
+                          letterSpacing: 0.5,
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 14),
-                    _buildDot('R', const Color(0xFFEF4444)),
-                    const SizedBox(width: 10),
-                    _buildDot('Y', const Color(0xFFEAB308)),
-                    const SizedBox(width: 10),
-                    _buildDot('B', const Color(0xFF2563EB)),
-                  ],
-                ),
+                      const SizedBox(width: 14),
+                      for (final ep in widget.tower.earthPeaks) ...[
+                        _buildDot(ep.side, const Color(0xFF0E9AA7)),
+                        const SizedBox(width: 10),
+                      ],
+                    ],
+                  )
+                else
+                  Row(
+                    children: [
+                      const Text(
+                        'PHASE',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF64748B),
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      _buildDot('R', const Color(0xFFEF4444)),
+                      const SizedBox(width: 10),
+                      _buildDot('Y', const Color(0xFFEAB308)),
+                      const SizedBox(width: 10),
+                      _buildDot('B', const Color(0xFF2563EB)),
+                    ],
+                  ),
                 const SizedBox(height: 6),
 
                 // Row 2: CONDITION
@@ -622,5 +783,203 @@ class _SelectiveTowerPainter extends CustomPainter {
         oldDelegate.cropTop != cropTop ||
         oldDelegate.selectedCircuit != selectedCircuit ||
         oldDelegate.selectedPhase != selectedPhase;
+  }
+}
+
+/// Painter that draws earthing peaks and highlight circles on the tower structure
+class _EarthPeakTowerPainter extends CustomPainter {
+  final double scale;
+  final double cropLeft;
+  final double cropTop;
+  final List<double> towerBbox;
+  final List<EarthPeak> earthPeaks;
+  final EarthPeak? selectedEarthPeak;
+
+  _EarthPeakTowerPainter({
+    required this.scale,
+    required this.cropLeft,
+    required this.cropTop,
+    required this.towerBbox,
+    required this.earthPeaks,
+    required this.selectedEarthPeak,
+  });
+
+  double _toX(double x) => (x - cropLeft) * scale;
+  double _toY(double y) => (y - cropTop) * scale;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    // Teal color matching earthingpeak.png
+    const tealColor = Color(0xFF0E9AA7);
+
+    for (final ep in earthPeaks) {
+      double nodeX;
+      double nodeY;
+
+      if (ep.keypoint != null) {
+        nodeX = _toX(ep.keypoint!.x);
+        nodeY = _toY(ep.keypoint!.y);
+      } else {
+        // Fallback positioning at top of tower if keypoint coordinate is missing
+        final double baseBx = towerBbox.isNotEmpty ? towerBbox[0] : 760.0;
+        final double baseBy = towerBbox.length > 1 ? towerBbox[1] : 180.0;
+        final double baseBw = towerBbox.length > 2 ? towerBbox[2] : 340.0;
+        final isLeft = ep.side.contains('SW') || ep.side.contains('W');
+        nodeX = isLeft ? _toX(baseBx + 60) : _toX(baseBx + baseBw - 60);
+        nodeY = _toY(baseBy);
+      }
+
+      final isSelected = selectedEarthPeak?.earthPeakId == ep.earthPeakId;
+      final hasDefect = ep.isCritical;
+
+      // Draw side label (e.g. 'SW' to the left or 'NE' to the right of node)
+      final bool isLeft = ep.side.contains('SW') || ep.side.contains('W');
+      final double labelX = isLeft ? nodeX - 28 : nodeX + 20;
+      _drawSideLabel(canvas, ep.side, labelX, nodeY);
+
+      // Draw the circular node containing the letter 'E' and shoulder checkmark
+      _drawEarthPeakNode(
+        canvas: canvas,
+        center: Offset(nodeX, nodeY),
+        isSelected: isSelected,
+        hasDefect: hasDefect,
+        color: tealColor,
+      );
+    }
+  }
+
+  // Draws text label for side (like 'SW' or 'NE') with white drop-shadow for contrast
+  void _drawSideLabel(Canvas canvas, String text, double x, double y) {
+    final painter = TextPainter(
+      text: TextSpan(
+        text: text,
+        style: const TextStyle(
+          color: Colors.black,
+          fontSize: 14,
+          fontWeight: FontWeight.w900,
+          shadows: [
+            Shadow(color: Colors.white, blurRadius: 4),
+          ],
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
+
+    painter.paint(canvas, Offset(x, y - (painter.height / 2)));
+  }
+
+  // Draws the earthing peak node: teal circle with white 'E', green checkmark, and double ring when selected
+  void _drawEarthPeakNode({
+    required Canvas canvas,
+    required Offset center,
+    required bool isSelected,
+    required bool hasDefect,
+    required Color color,
+  }) {
+    // When selected: draw double outer highlight rings matching earthingpeak.png
+    if (isSelected) {
+      canvas.drawCircle(
+        center,
+        14.5,
+        Paint()
+          ..color = color
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2.2,
+      );
+      canvas.drawCircle(
+        center,
+        12.0,
+        Paint()
+          ..color = Colors.white
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.8,
+      );
+    }
+
+    // Inner solid teal circle
+    canvas.drawCircle(
+      center,
+      9.0,
+      Paint()
+        ..color = color
+        ..style = PaintingStyle.fill,
+    );
+
+    // White border around the circle
+    canvas.drawCircle(
+      center,
+      9.0,
+      Paint()
+        ..color = Colors.white
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5,
+    );
+
+    // Letter 'E' inside circle (bold white)
+    final textPainter = TextPainter(
+      text: const TextSpan(
+        text: 'E',
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: 9.5,
+          fontWeight: FontWeight.w900,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
+
+    textPainter.paint(
+      canvas,
+      Offset(center.dx - textPainter.width / 2, center.dy - textPainter.height / 2),
+    );
+
+    // Shoulder badge on the top right (green circle with checkmark if normal)
+    final badgeCenter = center + const Offset(6.5, -6.5);
+    final badgeColor = hasDefect ? const Color(0xFFEF4444) : const Color(0xFF22C55E);
+
+    canvas.drawCircle(
+      badgeCenter,
+      4.5,
+      Paint()
+        ..color = badgeColor
+        ..style = PaintingStyle.fill,
+    );
+    canvas.drawCircle(
+      badgeCenter,
+      4.5,
+      Paint()
+        ..color = Colors.white
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 0.8,
+    );
+
+    final icon = hasDefect ? Icons.close : Icons.check;
+    final iconPainter = TextPainter(
+      text: TextSpan(
+        text: String.fromCharCode(icon.codePoint),
+        style: TextStyle(
+          fontSize: 5.5,
+          fontFamily: icon.fontFamily,
+          package: icon.fontPackage,
+          color: Colors.white,
+          fontWeight: FontWeight.w900,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
+
+    iconPainter.paint(
+      canvas,
+      Offset(badgeCenter.dx - iconPainter.width / 2, badgeCenter.dy - iconPainter.height / 2),
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _EarthPeakTowerPainter oldDelegate) {
+    return oldDelegate.scale != scale ||
+        oldDelegate.cropLeft != cropLeft ||
+        oldDelegate.cropTop != cropTop ||
+        oldDelegate.selectedEarthPeak != selectedEarthPeak ||
+        oldDelegate.earthPeaks != earthPeaks;
   }
 }
