@@ -9,7 +9,7 @@ class AppConfig {
   /// Base URL of the local image server (used for Flutter Web and optional fast crops)
   static const String imageServerBaseUrl = 'http://localhost:8085';
 
-  /// Relative path to inspection JSON inside Flutter assets
+  /// Relative path to inspection JSON inside Flutter assetss
   static const String assetInspectionJsonPath =
       'assets/data/inspection_1_s3.json';
 
