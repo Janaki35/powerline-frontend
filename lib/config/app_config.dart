@@ -13,7 +13,7 @@ class AppConfig {
   static const String assetInspectionJsonPath =
       'assets/data/inspection_1_s3.json';
 
-  /// Relative path to tower info JSON inside Flutter assets
+  /// Relative path to tower info JSONn inside Flutter assets
   static const String assetTowerInfoPath = 'assets/data/tower_info.json';
 
   /// Active Tower ID for this release
