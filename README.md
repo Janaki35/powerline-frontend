@@ -1,6 +1,6 @@
-# KnoGrid — AI-Powered Transmission Infrastructure Intelligence Platform
+# TowerLens — AI-Powered Transmission Infrastructure Intelligence Platform
 
-A high-fidelity Flutter frontend implementation for **KnoGrid (TowerLens Intelligence)**, accurately reproducing the Penpot design system and powered by real transmission tower inspection data (`400KV_Tower_1_Site_B`).
+A high-fidelity Flutter frontend implementation for **TowerLens (TowerLens Intelligence)**, accurately reproducing the Penpot design system and powered by real transmission tower inspection data (`400KV_Tower_1_Site_B`).
 
 ---
 
@@ -26,7 +26,7 @@ A high-fidelity Flutter frontend implementation for **KnoGrid (TowerLens Intelli
 The Flutter application mirrors the Penpot design boards (`01 Network map`, `02 Components`, `04 Inspection`, `05 Reference`):
 
 ### A. App Bar (`Inspection / App bar`)
-* **Branding**: `KnoGrid — TowerLens Intelligence`
+* **Branding**: `TowerLens — TowerLens Intelligence`
 * **Breadcrumbs**: `Network › 400KV Line - Site B › 400KV Tower 1 (Site B) › 9 Critical Deficiencies`
 * **View Switcher**: Toggle between interactive **Network Map** and **Phase Inspection**.
 * **Inspection Report**: Triggers the comprehensive inspection summary modal.
